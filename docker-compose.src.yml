@@ -90,6 +90,13 @@ services:
              python manage.py compilemessages &&
              gunicorn src.asgi:application --workers ${WORKERS_COUNT:-2} -k uvicorn_worker.UvicornWorker --worker-tmp-dir /dev/shm --bind unix:/tmp/gunicorn/pneumatic-backend.sock --timeout 200"
     environment:
+      OIDC_ISSUER: ${OIDC_ISSUER:-}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-}
+      OIDC_REDIRECT_URI: ${OIDC_REDIRECT_URI:-}
+      OIDC_ACCOUNT_ID: ${OIDC_ACCOUNT_ID:-}
+      OIDC_AUTO_CREATE_USERS: ${OIDC_AUTO_CREATE_USERS:-no}
+      OIDC_ADMIN_GROUP: ${OIDC_ADMIN_GROUP:-}
       BACKEND_URL: ${BACKEND_URL:-http://localhost:8001}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
       FORMS_URL: ${FORMS_URL:-http://localhost/forms}
@@ -496,7 +503,7 @@ services:
       MS_AUTH: ${MS_AUTH:-no}
       GOOGLE_AUTH: ${GOOGLE_AUTH:-no}
       SSO_AUTH: ${SSO_AUTH:-no}
-      SSO_PROVIDER: ${SSO_PROVIDER:-} # Allowed values: okta, auth0
+      SSO_PROVIDER: ${SSO_PROVIDER:-} # Allowed values: okta, auth0, oidc
       AI: ${AI:-no}
       PUSH: ${PUSH:-no}
       FILE_SERVICE_URL: ${FILE_SERVICE_URL:-http://localhost/files}

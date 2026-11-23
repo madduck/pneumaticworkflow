@@ -91,6 +91,13 @@ services:
     ports:
       - 8001:8001
     environment:
+      OIDC_ISSUER: ${OIDC_ISSUER:-}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-}
+      OIDC_REDIRECT_URI: ${OIDC_REDIRECT_URI:-}
+      OIDC_ACCOUNT_ID: ${OIDC_ACCOUNT_ID:-}
+      OIDC_AUTO_CREATE_USERS: ${OIDC_AUTO_CREATE_USERS:-no}
+      OIDC_ADMIN_GROUP: ${OIDC_ADMIN_GROUP:-}
       BACKEND_URL: ${BACKEND_URL:-http://localhost:8001}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
       FORMS_URL: ${FORMS_URL:-http://localhost/forms}

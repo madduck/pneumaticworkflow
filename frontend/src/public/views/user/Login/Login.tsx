@@ -14,11 +14,10 @@ import { getQueryStringParams, history } from '../../../utils/history';
 import { Button, FormikCheckbox, Header, InputField } from '../../../components/UI';
 import { GoogleButton, MicrosoftButton, SSOButton } from '../../../components/OAuthButtons';
 import { saveUTMParams } from '../utils/utmParams';
-import { handleOAuthClick } from '../utils/handleOAuthClick';
+import { handleOAuthClick, handleSSOClick } from '../utils/handleOAuthClick';
 import { getErrorsObject } from '../../../utils/formik/getErrorsObject';
 import { isEnvGoogleAuth, isEnvMsAuth, isEnvSSOAuth, isEnvSignup, envSSOProvider } from '../../../constants/enviroment';
 import type { ILoginProps, TLoginValues } from './types';
-import { SSOProvider } from '../../../../server/types';
 
 import styles from '../User.css';
 
@@ -30,7 +29,7 @@ const INITIAL_VALUES_FORMIK: TLoginValues = {
 
 export function Login({ loading, error, loginUser, setRedirectUrl }: ILoginProps) {
   const { formatMessage } = useIntl();
-  const typeSSOProvider = envSSOProvider === SSOProvider.Auth0 ? EOAuthType.SSOAuth0 : EOAuthType.SSOOkta;
+  const oidcFailed = new URLSearchParams(history.location.search).get('oidc_error') === '1';
 
   useEffect(() => {
     const queryString = history.location.search;
@@ -65,6 +64,12 @@ export function Login({ loading, error, loginUser, setRedirectUrl }: ILoginProps
         <IntlMessages id="user.login-title" />
       </Header>
 
+      {oidcFailed && (
+        <p role="alert">
+          <IntlMessages id="user.oidc-sign-in-failed" />
+        </p>
+      )}
+
       <div className={styles['oauth']}>
         {isEnvGoogleAuth && (
           <GoogleButton
@@ -83,7 +88,7 @@ export function Login({ loading, error, loginUser, setRedirectUrl }: ILoginProps
         {isEnvSSOAuth && (
           <SSOButton
             label={formatMessage({ id: 'user.sign-up-sso' })}
-            onClick={handleOAuthClick(typeSSOProvider, formatMessage)}
+            onClick={handleSSOClick(envSSOProvider, formatMessage)}
             className={styles['oauth__button']}
           />
         )}

@@ -7,6 +7,7 @@ from src.authentication.views.google import (
     GoogleAuthViewSet,
 )
 from src.authentication.views.microsoft import MSAuthViewSet
+from src.authentication.views.oidc import OIDCViewSet
 from src.authentication.views.okta import OktaViewSet
 from src.authentication.views.okta_logout import OktaLogoutView
 from src.authentication.views.password import (
@@ -87,5 +88,7 @@ router.register(
     OktaViewSet,
     basename='okta',
 )
+
+router.register('oidc', OIDCViewSet, basename='oidc')
 
 urlpatterns += router.urls

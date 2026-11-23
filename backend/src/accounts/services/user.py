@@ -7,6 +7,8 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
 from django.db import IntegrityError, transaction
 from django.utils.crypto import get_random_string
+from django.utils.translation import gettext as _
+from rest_framework.exceptions import PermissionDenied
 
 from src.accounts.enums import (
     Language,
@@ -436,6 +438,24 @@ class UserService(
                 user_data=UserWebsocketSerializer(old_manager).data,
             )
 
+    def _oidc_manages_admin(self) -> bool:
+        if not (
+            settings.PROJECT_CONF['SSO_AUTH']
+            and settings.PROJECT_CONF.get('SSO_PROVIDER') == 'oidc'
+            and settings.OIDC_ADMIN_GROUP
+            and not self.instance.is_account_owner
+            and str(self.instance.account_id) == str(settings.OIDC_ACCOUNT_ID)
+        ):
+            return False
+        # Read the link after taking the same user lock as OIDC sign-in.
+        self.instance.refresh_from_db(fields=['is_admin'], from_queryset=(
+            UserModel.objects.select_for_update()
+        ))
+        return UserModel.objects.filter(
+            pk=self.instance.pk, oidc_identity__issuer=settings.OIDC_ISSUER,
+        ).exists()
+
+    @transaction.atomic
     def toggle_admin(self):
 
         """ Flip the admin permission of the user and journal it.
@@ -446,6 +466,10 @@ class UserService(
             call them.
         """
 
+        if self._oidc_manages_admin():
+            raise PermissionDenied(
+                _('The identity provider controls the admin role.'),
+            )
         self.instance.is_admin = not self.instance.is_admin
         self.instance.save(update_fields=['is_admin'])
         AuditEventService.user_admin_toggled(
@@ -629,6 +653,14 @@ class UserService(
         # Single transaction wrapping both the user save and
         # subordinates update so partial state is never committed.
         with transaction.atomic():
+            if (
+                'is_admin' in update_kwargs
+                and self._oidc_manages_admin()
+                and update_kwargs.pop('is_admin') != self.instance.is_admin
+            ):
+                raise PermissionDenied(
+                    _('The identity provider controls the admin role.'),
+                )
             if raw_password:
                 super().partial_update(
                     password=make_password(raw_password),

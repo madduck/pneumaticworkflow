@@ -3,6 +3,7 @@ import express from 'express';
 
 import { initSentryServer } from './utils/initSentryServer';
 import { mainHandler, oAuthHandler, apiProxy } from './handlers';
+import { finishOIDC, isOIDCEnabled, startOIDC } from './handlers/oidcHandler';
 import { authMiddleware, verificateAccountMiddleware, forwardForSubdomain } from './middleware';
 import { getConfig, serverConfigToBrowser } from '../public/utils/getConfig';
 import { ERoutes } from '../public/constants/routes';
@@ -113,6 +114,11 @@ export async function initServer() {
 
   if (isSSOAuth && envSSOProvider === SSOProvider.Okta) {
     app.get(ERoutes.OAuthSSOOkta, oAuthHandler(urls.getSSOOktaUri, urls.getSSOOktaToken));
+  }
+
+  if (isOIDCEnabled()) {
+    app.get(ERoutes.OAuthOIDC, startOIDC);
+    app.get(ERoutes.OAuthOIDCCallback, finishOIDC);
   }
 
   app.get('*', authMiddleware);

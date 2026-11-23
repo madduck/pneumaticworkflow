@@ -24,13 +24,13 @@ export const envDevMode: boolean = process.env.NODE_ENV === 'development';
 export const isEnvCaptcha: boolean = getEnv('CAPTCHA') !== 'no';
 export const isEnvGoogleAuth: boolean = getEnv('GOOGLE_AUTH') !== 'no';
 export const isEnvMsAuth: boolean = getEnv('MS_AUTH') !== 'no';
-export const isEnvSSOAuth: boolean = getEnv('SSO_AUTH') !== 'no';
+export const envSSOProvider: string | undefined = getEnv('SSO_PROVIDER');
+export const isEnvSSOAuth = envSSOProvider === 'oidc' ? getEnv('SSO_AUTH') === 'yes' : getEnv('SSO_AUTH') !== 'no';
 export const isEnvSignup: boolean = getEnv('SIGNUP') !== 'no';
 export const isEnvBilling: boolean = getEnv('BILLING') !== 'no';
 export const isEnvAi: boolean = getEnv('AI') !== 'no';
 export const isEnvPush: boolean = getEnv('PUSH') !== 'no';
 export const isEnvAnalytics: boolean = getEnv('ANALYTICS') !== 'no';
-export const envSSOProvider: string | undefined = getEnv('SSO_PROVIDER');
 
 // New ENV
 
