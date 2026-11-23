@@ -3,6 +3,7 @@ import type { NextFunction, Request, Response } from 'express';
 import { ERoutes } from '../../public/constants/routes';
 import { parseCookies } from '../../public/utils/cookie';
 import { setAuthCookie, setGuestCookie } from '../utils/cookie';
+import { isOIDCEnabled } from '../handlers/oidcHandler';
 import { identifyAppPartOnServer } from '../../public/utils/identifyAppPart/identifyAppPartOnServer';
 import { EAppPart } from '../../public/utils/identifyAppPart/types';
 import { getUser } from './utils/getUser';
@@ -37,8 +38,7 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
   // If we find an authorization token from a mobile application request, we record it in cookies.
   if (mobileAppToken) setAuthCookie(req, res, { token: req.query.mobile_app_token as string });
 
-  // If there is no token, we will render the front depending on the url category.
-  if (!token) return isUnsignedUserRoute ? next() : res.redirect(getLoginUrl(req));
+  if (!token) return redirectUnsigned(req, res, next, isUnsignedUserRoute);
 
   try {
     // We receive the data of the authorized user using a token and record it in the response further.
@@ -60,8 +60,26 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
     resetCookie('token', req, res);
 
     res.locals.user = { token };
-    return isUnsignedUserRoute ? next() : res.redirect(ERoutes.Login);
+    return redirectUnsigned(req, res, next, isUnsignedUserRoute, true);
   }
+}
+
+function redirectUnsigned(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+  isUnsignedUserRoute: boolean,
+  expiredSession = false,
+) {
+  const path = req.url.split('?')[0];
+  const isLogin = path === ERoutes.Login || path === ERoutes.Login.slice(0, -1);
+  if (isOIDCEnabled() && process.env.OIDC_AUTO_LOGIN === 'yes' && (!isUnsignedUserRoute || isLogin)) {
+    if (isLogin && req.query?.local === '1') return next();
+    const returnTo = isLogin ? req.query?.redirectUrl : req.url;
+    const query = typeof returnTo === 'string' ? `?return_to=${encodeURIComponent(returnTo)}` : '';
+    return res.redirect(ERoutes.OAuthOIDC + query);
+  }
+  return isUnsignedUserRoute ? next() : res.redirect(expiredSession ? ERoutes.Login : getLoginUrl(req));
 }
 
 function redirectToUserDefaulRoute(user: IAuthenticatedUser, res: Response) {

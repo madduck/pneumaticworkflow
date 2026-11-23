@@ -34,6 +34,7 @@
    OIDC_REDIRECT_URI=https://workflows.example.org/oauth/oidc/callback/
    OIDC_ACCOUNT_ID=42
    OIDC_AUTO_CREATE_USERS=no
+   OIDC_AUTO_LOGIN=no
    OIDC_ADMIN_GROUP=pneumatic-admins
    ```
 
@@ -51,3 +52,7 @@ users get workspace admin rights. The workspace owner keeps local access. Omit
 
 If you want Authentik users without an invitation to join, set
 `OIDC_AUTO_CREATE_USERS=yes` after you test the application’s access policy.
+
+If you want the browser to skip Pneumatic’s sign-in page, set
+`OIDC_AUTO_LOGIN=yes` after you test the OIDC flow. Test the workspace owner’s
+recovery sign-in at `/auth/signin/?local=1` before you enable auto-login.

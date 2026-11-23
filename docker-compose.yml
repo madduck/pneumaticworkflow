@@ -502,6 +502,7 @@ services:
       GOOGLE_AUTH: ${GOOGLE_AUTH:-no}
       SSO_AUTH: ${SSO_AUTH:-no}
       SSO_PROVIDER: ${SSO_PROVIDER:-} # Allowed values: okta, auth0, oidc
+      OIDC_AUTO_LOGIN: ${OIDC_AUTO_LOGIN:-no}
       AI: ${AI:-no}
       PUSH: ${PUSH:-no}
       FILE_SERVICE_URL: ${FILE_SERVICE_URL:-http://localhost/files}
