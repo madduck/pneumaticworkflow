@@ -14,6 +14,8 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.translation import gettext as _
 
+from src.accounts.models import Account
+
 from ..models import OIDCLoginAttempt  # noqa: TID252
 from .exceptions import AuthException
 
@@ -79,19 +81,36 @@ class OIDCService:
         self.client_id = settings.OIDC_CLIENT_ID
         self.client_secret = settings.OIDC_CLIENT_SECRET
         self.redirect_uri = _https_url(settings.OIDC_REDIRECT_URI)
-        try:
-            self.account_id = int(settings.OIDC_ACCOUNT_ID)
-        except (TypeError, ValueError):
-            raise _reject() from None
         if (
             not self.client_id
             or not self.client_secret
-            or self.account_id < 1
-            or str(self.account_id) != str(settings.OIDC_ACCOUNT_ID)
             or len(self.issuer) > 512
             or urlsplit(self.issuer).query
         ):
             raise _reject()
+
+        configured_id = settings.OIDC_ACCOUNT_ID
+        if configured_id == '':
+            account_ids = list(
+                Account.objects.values_list('pk', flat=True)[:2],
+            )
+            if not account_ids:
+                raise OIDCError(_('Create a workspace before using OIDC.'))
+            if len(account_ids) > 1:
+                raise OIDCError(
+                    _('Set OIDC_ACCOUNT_ID to choose a workspace for OIDC.'),
+                )
+            self.account_id = account_ids[0]
+        else:
+            try:
+                self.account_id = int(configured_id)
+            except (TypeError, ValueError):
+                raise _reject() from None
+            if (
+                self.account_id < 1
+                or str(self.account_id) != str(configured_id)
+            ):
+                raise _reject()
 
     def _binding(self, browser_key: str) -> str:
         value = json.dumps(

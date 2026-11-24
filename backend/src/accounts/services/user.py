@@ -439,14 +439,19 @@ class UserService(
             )
 
     def _oidc_manages_admin(self) -> bool:
+        configured_id = settings.OIDC_ACCOUNT_ID
         if not (
             settings.PROJECT_CONF['SSO_AUTH']
             and settings.PROJECT_CONF.get('SSO_PROVIDER') == 'oidc'
             and settings.OIDC_ADMIN_GROUP
             and not self.instance.is_account_owner
-            and str(self.instance.account_id) == str(settings.OIDC_ACCOUNT_ID)
+            and (
+                configured_id == ''
+                or str(self.instance.account_id) == str(configured_id)
+            )
         ):
             return False
+        # With no explicit workspace, keep existing links under OIDC control.
         # Read the link after taking the same user lock as OIDC sign-in.
         self.instance.refresh_from_db(fields=['is_admin'], from_queryset=(
             UserModel.objects.select_for_update()

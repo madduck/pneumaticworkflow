@@ -21,9 +21,9 @@
    ```
 
 3. Set these deployment variables. Use the exact issuer from Authentik’s OpenID
-   configuration document, including any trailing slash. Replace `42` with your
-   existing Pneumatic workspace ID. Set `SSO_AUTH` and `SSO_PROVIDER` on the
-   backend and frontend. Keep the client secret on the backend.
+   configuration document, including any trailing slash. Set `SSO_AUTH` and
+   `SSO_PROVIDER` on the backend and frontend. Keep the client secret on the
+   backend.
 
    ```text
    SSO_AUTH=yes
@@ -32,11 +32,15 @@
    OIDC_CLIENT_ID=your-client-id
    OIDC_CLIENT_SECRET=your-client-secret
    OIDC_REDIRECT_URI=https://workflows.example.org/oauth/oidc/callback/
-   OIDC_ACCOUNT_ID=42
    OIDC_AUTO_CREATE_USERS=no
    OIDC_AUTO_LOGIN=no
    OIDC_ADMIN_GROUP=pneumatic-admins
    ```
+
+   If Pneumatic has exactly one workspace, you can omit `OIDC_ACCOUNT_ID`. If
+   Pneumatic has more than one workspace, set `OIDC_ACCOUNT_ID` to the numeric
+   ID of the workspace that Authentik must manage. If Pneumatic has no
+   workspaces, create one before you use OIDC.
 
 4. Apply the backend migrations and restart Pneumatic. Test with an invited
    user. To link an existing member, first make sure that the Authentik subject

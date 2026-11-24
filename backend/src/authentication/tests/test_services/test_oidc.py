@@ -8,6 +8,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from django.core.cache import cache
 from django.utils import timezone
 
+from src.accounts.models import Account
 from src.authentication.models import OIDCLoginAttempt
 from src.authentication.services.oidc import OIDCError, OIDCService
 
@@ -19,7 +20,7 @@ BROWSER_KEY = 'a' * 43
 
 
 @pytest.fixture
-def service(settings: Any) -> OIDCService:
+def oidc_settings(settings: Any) -> Any:
     settings.PROJECT_CONF = {
         **settings.PROJECT_CONF,
         'SSO_AUTH': True,
@@ -29,9 +30,49 @@ def service(settings: Any) -> OIDCService:
     settings.OIDC_CLIENT_ID = 'pneumatic'
     settings.OIDC_CLIENT_SECRET = 'client-secret'
     settings.OIDC_REDIRECT_URI = CALLBACK
-    settings.OIDC_ACCOUNT_ID = '123'
+    settings.OIDC_ACCOUNT_ID = ''
     cache.clear()
+    return settings
+
+
+@pytest.fixture
+def service(oidc_settings: Any) -> OIDCService:
+    oidc_settings.OIDC_ACCOUNT_ID = '123'
     return OIDCService()
+
+
+def test_oidc_uses_the_only_workspace(oidc_settings: Any) -> None:
+    workspace = Account.objects.create()
+
+    assert OIDCService().account_id == workspace.pk
+
+
+def test_oidc_requires_a_workspace(oidc_settings: Any) -> None:
+    with pytest.raises(OIDCError, match='Create a workspace'):
+        OIDCService()
+
+
+def test_oidc_requires_an_explicit_id_with_multiple_workspaces(
+    oidc_settings: Any,
+) -> None:
+    Account.objects.create()
+    selected = Account.objects.create()
+
+    with pytest.raises(OIDCError, match='Set OIDC_ACCOUNT_ID'):
+        OIDCService()
+
+    oidc_settings.OIDC_ACCOUNT_ID = str(selected.pk)
+    assert OIDCService().account_id == selected.pk
+
+
+def test_oidc_does_not_infer_a_workspace_for_an_invalid_id(
+    oidc_settings: Any,
+) -> None:
+    Account.objects.create()
+    oidc_settings.OIDC_ACCOUNT_ID = '0'
+
+    with pytest.raises(OIDCError):
+        OIDCService()
 
 
 @pytest.fixture

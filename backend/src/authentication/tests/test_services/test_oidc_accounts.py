@@ -104,10 +104,14 @@ def test_pending_invitation_is_accepted_without_auto_creation(
     assert invited.is_active
 
 
+@pytest.mark.parametrize('infer_workspace', [False, True])
 def test_sync_reuses_and_creates_groups_and_revokes_admin(
     workspace: Account,
     settings: Any,
+    infer_workspace: bool,
 ) -> None:
+    if infer_workspace:
+        settings.OIDC_ACCOUNT_ID = ''
     settings.OIDC_ADMIN_GROUP = 'administrators'
     user = create_test_not_admin(account=workspace, email=EMAIL)
     OIDCIdentity.objects.create(issuer=ISSUER, subject='subject', user=user)
