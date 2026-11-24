@@ -372,6 +372,7 @@ export const ruMessages = {
   'menu.main': 'Главная',
   'menu.help-center': 'Поддержка',
   'menu.dashboard': 'Главное',
+  'sidebar.keep-open': 'Оставлять боковую панель открытой',
   'menu.tasks': 'Задачи',
   'menu.workflows': 'Процессы',
   'menu.workflows.in-progress': 'В работе',

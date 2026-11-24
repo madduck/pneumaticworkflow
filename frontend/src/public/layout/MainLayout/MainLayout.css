@@ -1,9 +1,18 @@
 .main-layout {
+  --sidebar-collapsed-width: 7.2rem;
+  --sidebar-expanded-width: 20rem;
+
   display: flex;
   flex-direction: column;
   height: 100%;
   overflow: scroll;
   overflow-x: hidden;
+
+  @media screen and (--desktop) {
+    &:has(> [data-sidebar-pinned]) {
+      padding-left: calc(var(--sidebar-expanded-width) - var(--sidebar-collapsed-width));
+    }
+  }
 }
 
 @media print {

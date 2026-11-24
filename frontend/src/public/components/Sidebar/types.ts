@@ -48,5 +48,7 @@ export interface IUseSidebarNavigationResult {
   handleCloseMenu(): void;
   handleMobileMenuToggle(event: MouseEvent<HTMLElement>): void;
   handleOpenMenu(): void;
+  handleTogglePin(): void;
   isMobile: boolean;
+  isPinnedOpen: boolean;
 }
