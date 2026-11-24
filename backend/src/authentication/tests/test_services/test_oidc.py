@@ -4,9 +4,14 @@ from urllib.parse import parse_qs, urlsplit
 
 import jwt
 import pytest
+from _pytest.logging import LogCaptureFixture
 from cryptography.hazmat.primitives.asymmetric import rsa
 from django.core.cache import cache
+from django.urls import reverse
 from django.utils import timezone
+from requests import Response
+from rest_framework import status
+from rest_framework.test import APIClient
 
 from src.accounts.models import Account
 from src.authentication.models import OIDCLoginAttempt
@@ -133,17 +138,58 @@ def _start(
     return state
 
 
+def test_callback_logs_provider_status_without_logging_credentials(
+    service: OIDCService,
+    api_client: APIClient,
+    caplog: LogCaptureFixture,
+    mocker: Any,
+) -> None:
+    mocker.patch.object(
+        OIDCService,
+        '_metadata',
+        return_value={
+            'authorization_endpoint': 'https://sso.example.org/authorize',
+            'token_endpoint': 'https://sso.example.org/token',
+        },
+    )
+    url = service.start(BROWSER_KEY)
+    state = parse_qs(urlsplit(url).query)['state'][0]
+    code = 'test-authorization-code'
+    response = Response()
+    response.status_code = 401
+    mocker.patch(
+        'src.authentication.services.oidc.requests.request',
+        return_value=response,
+    )
+
+    result = api_client.post(
+        reverse('auth:oidc-token'),
+        {'browser_key': BROWSER_KEY, 'state': state, 'code': code},
+        format='json',
+    )
+
+    assert result.status_code == status.HTTP_400_BAD_REQUEST
+    assert 'The token endpoint returned HTTP 401.' in caplog.text
+    assert result.data['message'] == (
+        'OpenID Connect sign-in failed. Start a new sign-in.'
+    )
+    for secret in (BROWSER_KEY, state, code, service.client_secret):
+        assert secret not in caplog.text
+
+
 def test_callback_requires_same_browser_and_consumes_state(
     service: OIDCService,
     fake_provider: Callable[[dict[str, Any]], None],
 ) -> None:
     state = _start(service, fake_provider)
-    with pytest.raises(OIDCError):
+    with pytest.raises(OIDCError) as wrong_browser:
         service.exchange('code', state, 'b' * 43)
+    assert 'does not match this browser' in wrong_browser.value.reason
 
     assert service.exchange('code', state, BROWSER_KEY)['sub'] == 'subject'
-    with pytest.raises(OIDCError):
+    with pytest.raises(OIDCError) as consumed:
         service.exchange('code', state, BROWSER_KEY)
+    assert 'missing or expired' in consumed.value.reason
 
 
 @pytest.mark.parametrize(

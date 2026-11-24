@@ -24,20 +24,28 @@ _ATTEMPT_TTL = timedelta(minutes=10)
 
 
 class OIDCError(AuthException):
-    """An OIDC error that the application can show to users."""
+    """An error with a public message and a reason safe to log."""
+
+    def __init__(self, message: str, *, reason: str) -> None:
+        super().__init__(message)
+        self.reason = reason
 
 
-def _reject() -> OIDCError:
-    return OIDCError(_('OpenID Connect sign-in failed. Start a new sign-in.'))
+def _reject(reason: str) -> OIDCError:
+    return OIDCError(
+        _('OpenID Connect sign-in failed. Start a new sign-in.'),
+        reason=reason,
+    )
 
 
 def _https_url(value: Any) -> str:
+    reason = 'The configuration contains a missing or invalid HTTPS URL.'
     if not isinstance(value, str):
-        raise _reject()
+        raise _reject(reason)
     try:
         url = urlsplit(value)
     except ValueError:
-        raise _reject() from None
+        raise _reject(reason) from None
     if (
         url.scheme != 'https'
         or not url.hostname
@@ -45,11 +53,13 @@ def _https_url(value: Any) -> str:
         or url.username is not None
         or '\\' in value
     ):
-        raise _reject()
+        raise _reject(reason)
     return value
 
 
-def _json_request(method: str, url: str, **kwargs: Any) -> dict[str, Any]:
+def _json_request(
+    method: str, url: str, *, endpoint: str, **kwargs: Any,
+) -> dict[str, Any]:
     try:
         response = requests.request(
             method,
@@ -58,13 +68,21 @@ def _json_request(method: str, url: str, **kwargs: Any) -> dict[str, Any]:
             allow_redirects=False,
             **kwargs,
         )
-        if response.status_code != 200:
-            raise _reject()
+    except (requests.RequestException, ValueError) as exc:
+        raise _reject(
+            f'Request to the {endpoint} failed: {type(exc).__name__}.',
+        ) from None
+    if response.status_code != 200:
+        raise _reject(
+            f'The {endpoint} returned HTTP {response.status_code}.',
+        )
+    reason = f'The {endpoint} did not return a JSON object.'
+    try:
         data = response.json()
-    except (requests.RequestException, ValueError):
-        raise _reject() from None
+    except ValueError:
+        raise _reject(reason) from None
     if not isinstance(data, dict):
-        raise _reject()
+        raise _reject(reason)
     return data
 
 
@@ -76,7 +94,10 @@ class OIDCService:
             not settings.PROJECT_CONF['SSO_AUTH']
             or settings.PROJECT_CONF.get('SSO_PROVIDER') != 'oidc'
         ):
-            raise OIDCError(_('OpenID Connect sign-in is disabled.'))
+            raise OIDCError(
+                _('OpenID Connect sign-in is disabled.'),
+                reason='OIDC is disabled on the backend.',
+            )
         self.issuer = _https_url(settings.OIDC_ISSUER)
         self.client_id = settings.OIDC_CLIENT_ID
         self.client_secret = settings.OIDC_CLIENT_SECRET
@@ -87,7 +108,7 @@ class OIDCService:
             or len(self.issuer) > 512
             or urlsplit(self.issuer).query
         ):
-            raise _reject()
+            raise _reject('The issuer or client configuration is invalid.')
 
         configured_id = settings.OIDC_ACCOUNT_ID
         if configured_id == '':
@@ -95,22 +116,27 @@ class OIDCService:
                 Account.objects.values_list('pk', flat=True)[:2],
             )
             if not account_ids:
-                raise OIDCError(_('Create a workspace before using OIDC.'))
+                raise OIDCError(
+                    _('Create a workspace before using OIDC.'),
+                    reason='There is no workspace for OIDC.',
+                )
             if len(account_ids) > 1:
                 raise OIDCError(
                     _('Set OIDC_ACCOUNT_ID to choose a workspace for OIDC.'),
+                    reason='Multiple workspaces exist. Set OIDC_ACCOUNT_ID.',
                 )
             self.account_id = account_ids[0]
         else:
+            reason = 'OIDC_ACCOUNT_ID is not a valid workspace ID.'
             try:
                 self.account_id = int(configured_id)
             except (TypeError, ValueError):
-                raise _reject() from None
+                raise _reject(reason) from None
             if (
                 self.account_id < 1
                 or str(self.account_id) != str(configured_id)
             ):
-                raise _reject()
+                raise _reject(reason)
 
     def _binding(self, browser_key: str) -> str:
         value = json.dumps(
@@ -133,9 +159,10 @@ class OIDCService:
             metadata = _json_request(
                 'GET',
                 self.issuer.rstrip('/') + '/.well-known/openid-configuration',
+                endpoint='discovery endpoint',
             )
             if metadata.get('issuer') != self.issuer:
-                raise _reject()
+                raise _reject('The provider issuer differs from OIDC_ISSUER.')
             for endpoint in (
                 'authorization_endpoint',
                 'token_endpoint',
@@ -195,11 +222,16 @@ class OIDCService:
                 )
                 .first()
             )
-            if not attempt or not secrets.compare_digest(
+            if not attempt:
+                raise _reject('The sign-in attempt is missing or expired.')
+            if not secrets.compare_digest(
                 attempt.browser_binding,
                 self._binding(browser_key),
             ):
-                raise _reject()
+                raise _reject(
+                    'The sign-in attempt does not match this browser '
+                    'or configuration.',
+                )
             attempt.delete()
             return attempt
 
@@ -210,14 +242,18 @@ class OIDCService:
         nonce: str,
     ) -> dict[str, Any]:
         if not isinstance(id_token, str):
-            raise _reject()
+            raise _reject('The provider did not return an ID token.')
         try:
             header = jwt.get_unverified_header(id_token)
             if header.get('alg') != 'RS256':
-                raise _reject()
-            keys = _json_request('GET', jwks_uri).get('keys')
+                raise _reject(
+                    'The provider did not sign the ID token with RS256.',
+                )
+            keys = _json_request(
+                'GET', jwks_uri, endpoint='signing key endpoint',
+            ).get('keys')
             if not isinstance(keys, list):
-                raise _reject()
+                raise _reject('The provider sent no valid signing key list.')
             kid = header.get('kid')
             candidates = [
                 key
@@ -229,7 +265,7 @@ class OIDCService:
                 and (kid is None or key.get('kid') == kid)
             ]
             if len(candidates) != 1:
-                raise _reject()
+                raise _reject('The ID token has no unique matching key.')
             claims = jwt.decode(
                 id_token,
                 jwt.PyJWK.from_dict(candidates[0], 'RS256').key,
@@ -241,12 +277,15 @@ class OIDCService:
                     'require': ['iss', 'aud', 'exp', 'iat', 'sub', 'nonce'],
                 },
             )
-        except (jwt.PyJWTError, TypeError, ValueError, OverflowError):
-            raise _reject() from None
+        except (jwt.PyJWTError, TypeError, ValueError, OverflowError) as exc:
+            raise _reject(
+                f'ID token validation failed ({type(exc).__name__}).',
+            ) from None
+        if claims['nonce'] != nonce:
+            raise _reject('The ID token has the wrong nonce.')
         subject = claims['sub']
         if (
-            claims['nonce'] != nonce
-            or not subject
+            not subject
             or len(subject) > 255
             or not subject.isascii()
             or '\x00' in subject
@@ -257,7 +296,7 @@ class OIDCService:
                 and claims.get('azp') != self.client_id
             )
         ):
-            raise _reject()
+            raise _reject('The ID token has an invalid subject or party.')
         return claims
 
     def exchange(
@@ -276,7 +315,9 @@ class OIDCService:
             ],
         )
         if not isinstance(methods, list):
-            raise _reject()
+            raise _reject(
+                'The token authentication method list is invalid.',
+            )
         data = {
             'grant_type': 'authorization_code',
             'code': code,
@@ -291,9 +332,12 @@ class OIDCService:
                 client_id=self.client_id, client_secret=self.client_secret,
             )
         else:
-            raise _reject()
+            raise _reject(
+                'The provider lists no supported client authentication.',
+            )
         tokens = _json_request(
-            'POST', metadata['token_endpoint'], data=data, auth=auth,
+            'POST', metadata['token_endpoint'], endpoint='token endpoint',
+            data=data, auth=auth,
         )
         claims = self._id_claims(
             tokens.get('id_token'), metadata['jwks_uri'], attempt.nonce,
@@ -307,12 +351,15 @@ class OIDCService:
                 profile = _json_request(
                     'GET',
                     userinfo,
+                    endpoint='UserInfo endpoint',
                     headers={
                         'Authorization': f'Bearer {token}',
                     },
                 )
                 if profile.get('sub') != claims['sub']:
-                    raise _reject()
+                    raise _reject(
+                        'The UserInfo subject does not match the ID token.',
+                    )
                 claims.setdefault('groups', profile.get('groups'))
                 if 'email' not in claims:
                     claims.update(
@@ -336,5 +383,6 @@ class OIDCService:
         ):
             raise OIDCError(
                 _('The identity provider sent no valid group list.'),
+                reason='The provider did not return a valid groups claim.',
             )
         return claims

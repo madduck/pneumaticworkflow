@@ -60,3 +60,16 @@ If you want Authentik users without an invitation to join, set
 If you want the browser to skip Pneumatic’s sign-in page, set
 `OIDC_AUTO_LOGIN=yes` after you test the OIDC flow. Test the workspace owner’s
 recovery sign-in at `/auth/signin/?local=1` before you enable auto-login.
+
+## Troubleshoot a failed callback
+
+Start a new sign-in instead of reloading the callback. Each callback works only
+once. On the Docker Compose host, run `docker compose logs --since 5m backend`.
+Look for `OIDC callback failed:`. The warning gives a reason without including
+codes, tokens or claim values.
+
+If the provider does not send `email_verified: true`, check the Authentik
+`email` scope mapping. Return the JSON boolean `true` only for addresses that
+Authentik or a trusted source verified. If the email already belongs to a
+Pneumatic user, follow step 4 to link that user. `OIDC_AUTO_CREATE_USERS` does
+not link existing users by email.

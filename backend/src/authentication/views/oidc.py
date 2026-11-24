@@ -1,3 +1,5 @@
+import logging
+
 from drf_spectacular.utils import extend_schema
 from rest_framework import serializers
 from rest_framework.decorators import action
@@ -15,6 +17,8 @@ from ..permissions import SSOPermission  # noqa: TID252
 from ..services.oidc import OIDCError, OIDCService  # noqa: TID252
 from ..services.oidc_accounts import authenticate_oidc_user  # noqa: TID252
 from ..throttling import SSOAuthUriThrottle, SSOTokenThrottle  # noqa: TID252
+
+logger = logging.getLogger(__name__)
 
 
 class OIDCStartSerializer(serializers.Serializer):
@@ -51,6 +55,7 @@ class OIDCViewSet(AnonymousMixin, BaseIdentifyMixin, GenericViewSet):
         try:
             uri = OIDCService().start(**serializer.validated_data)
         except OIDCError as exc:
+            logger.warning('OIDC sign-in did not start: %s', exc.reason)
             raise_validation_error(message=exc.message)
         return Response(
             {'auth_uri': uri}, headers={'Cache-Control': 'no-store'},
@@ -68,7 +73,14 @@ class OIDCViewSet(AnonymousMixin, BaseIdentifyMixin, GenericViewSet):
     def token(self, request: Request) -> Response:
         """Complete sign-in and return a Pneumatic session token."""
         serializer = OIDCExchangeSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        try:
+            serializer.is_valid(raise_exception=True)
+        except serializers.ValidationError:
+            logger.warning(
+                'OIDC callback failed: Invalid callback fields: %s.',
+                ', '.join(serializer.errors),
+            )
+            raise
         try:
             service = OIDCService()
             claims = service.exchange(**serializer.validated_data)
@@ -80,6 +92,7 @@ class OIDCViewSet(AnonymousMixin, BaseIdentifyMixin, GenericViewSet):
                 user_ip=self.get_user_ip(request),
             )
         except OIDCError as exc:
+            logger.warning('OIDC callback failed: %s', exc.reason)
             raise_validation_error(message=exc.message)
         self.identify(user)
         return Response(

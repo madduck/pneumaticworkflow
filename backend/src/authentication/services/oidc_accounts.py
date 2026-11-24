@@ -29,20 +29,24 @@ from .oidc import OIDCError
 from .user_auth import AuthService
 
 
-def _no_user() -> OIDCError:
-    return OIDCError(_('This identity cannot sign in to this workspace.'))
+def _no_user(reason: str) -> OIDCError:
+    return OIDCError(
+        _('This identity cannot sign in to this workspace.'),
+        reason=reason,
+    )
 
 
 def _verified_email(claims: dict[str, Any]) -> str:
+    if claims.get('email_verified') is not True:
+        raise _no_user('The provider did not send email_verified: true.')
     email = claims.get('email')
-    if claims.get('email_verified') is not True or not isinstance(email, str):
-        raise _no_user()
+    reason = 'The provider did not send a valid email address.'
+    if not isinstance(email, str) or len(email) > 254:
+        raise _no_user(reason)
     try:
         validate_email(email)
     except ValidationError:
-        raise _no_user() from None
-    if len(email) > 254:
-        raise _no_user()
+        raise _no_user(reason) from None
     return email.lower()
 
 
@@ -63,7 +67,9 @@ def _resolve_user(
                 status=UserStatus.ACTIVE,
             )
         except User.DoesNotExist:
-            raise _no_user() from None
+            raise _no_user(
+                'The linked user is not an active member of this workspace.',
+            ) from None
         return link, False
 
     email = _verified_email(claims)
@@ -77,11 +83,10 @@ def _resolve_user(
         for user in users
         if user.account_id == account.id and user.status == UserStatus.INVITED
     ]
-    if (
-        any(user.status != UserStatus.INVITED for user in users)
-        or len(invited) > 1
-    ):
-        raise _no_user()
+    if any(user.status != UserStatus.INVITED for user in users):
+        raise _no_user('An existing user has this email but is not linked.')
+    if len(invited) > 1:
+        raise _no_user('More than one invited user has this email.')
     first_name = claims.get('given_name')
     first_name = (
         first_name.replace('\x00', '')[:150]
@@ -97,7 +102,7 @@ def _resolve_user(
     if invited:
         user = invited[0]
         if OIDCIdentity.objects.filter(user=user).exists():
-            raise _no_user()
+            raise _no_user('The invited user is linked to another identity.')
         try:
             invite = UserInvite.objects.get(
                 invited_user=user,
@@ -105,7 +110,9 @@ def _resolve_user(
                 status=UserInviteStatus.PENDING,
             )
         except UserInvite.DoesNotExist:
-            raise _no_user() from None
+            raise _no_user(
+                'The invited user has no pending invitation.',
+            ) from None
         service = UserInviteService(
             request_user=user,
             current_url='',
@@ -117,8 +124,12 @@ def _resolve_user(
             first_name=first_name or user.first_name,
             last_name=last_name or user.last_name,
         )
-    elif users or not settings.OIDC_AUTO_CREATE_USERS:
-        raise _no_user()
+    elif users:
+        raise _no_user('The invitation is for another workspace.')
+    elif not settings.OIDC_AUTO_CREATE_USERS:
+        raise _no_user(
+            'OIDC_AUTO_CREATE_USERS is disabled and there is no invitation.',
+        )
     else:
         user = UserService(account=account).create(
             account=account,
@@ -147,6 +158,7 @@ def _sync_groups(link: OIDCIdentity, names: set[str]) -> None:
         if group and group.type != UserGroupType.REGULAR:
             raise OIDCError(
                 _('An identity provider group uses a reserved name.'),
+                reason='A provider group uses a reserved Pneumatic name.',
             )
         if not group:
             group = UserGroupService(user=user).create(name=name)
@@ -214,8 +226,12 @@ def authenticate_oidc_user(
             names = set(claims['groups'])
             _sync_groups(link, names)
             _sync_admin(link, names)
-    except (Account.DoesNotExist, AlreadyRegisteredException, IntegrityError):
-        raise _no_user() from None
+    except Account.DoesNotExist:
+        raise _no_user('The configured workspace does not exist.') from None
+    except (AlreadyRegisteredException, IntegrityError):
+        raise _no_user(
+            'A database conflict blocked user or group updates.',
+        ) from None
     user = link.user
     token = AuthService.get_auth_token(
         user=user, user_agent=user_agent, user_ip=user_ip,

@@ -81,8 +81,11 @@ def test_existing_email_is_not_linked_by_auto_creation(
 ) -> None:
     settings.OIDC_AUTO_CREATE_USERS = True
     create_test_not_admin(account=workspace, email=EMAIL)
-    with pytest.raises(OIDCError):
+    with pytest.raises(OIDCError) as rejected:
         _login(workspace)
+    assert rejected.value.reason == (
+        'An existing user has this email but is not linked.'
+    )
     assert not OIDCIdentity.objects.filter(issuer=ISSUER).exists()
 
 
@@ -90,8 +93,11 @@ def test_unverified_email_does_not_provision(
     workspace: Account, settings: Any,
 ) -> None:
     settings.OIDC_AUTO_CREATE_USERS = True
-    with pytest.raises(OIDCError):
+    with pytest.raises(OIDCError) as rejected:
         _login(workspace, email_verified='true')
+    assert rejected.value.reason == (
+        'The provider did not send email_verified: true.'
+    )
     assert not User.objects.filter(email=EMAIL).exists()
 
 
