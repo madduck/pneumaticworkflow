@@ -29,12 +29,6 @@ export const enMessages = {
   'editor.link-url-invalid': 'Please enter correct link',
   'editor.link-name-invalid': 'Please enter correct link name',
 
-  'sidebar.ribbon-free': 'Free Plan',
-  'sidebar.ribbon-trial': 'Trial Period',
-  'sidebar.ribbon-premium': 'Premium Plan',
-  'sidebar.ribbon-unlimited': 'Unlimited Plan',
-  'sidebar.ribbon-partner': 'Partner',
-
   'filter.show-more': 'Show more {optionsTitle}',
   'filter.show-less': 'Show less {optionsTitle}',
   'filter.search': 'Search {optionsTitle}',
