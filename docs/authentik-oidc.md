@@ -49,8 +49,13 @@
 
 By default, Pneumatic requests `openid email profile groups`. If your provider
 uses different scopes, set `OIDC_SCOPES` on the backend to a space-separated
-list that includes `openid`. The provider must still return a `groups` claim
-(the user’s group list) for sign-in to succeed.
+list that includes `openid`.
+
+Pneumatic reads the user’s group list from the `groups` claim by default. A
+claim is a named field from the provider. If the list uses a different field
+name, set `OIDC_GROUPS_CLAIM` on the backend to that name. The provider must
+return a list of group names in the configured claim. Pneumatic reads it from
+the ID token first, or from UserInfo if the token does not contain the claim.
 
 Pneumatic reuses groups with the same exact name and creates missing groups. A
 matching group can grant access to existing workflows. Group and admin changes

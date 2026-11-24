@@ -304,7 +304,7 @@ class OIDCService:
         state: str,
         browser_key: str,
     ) -> dict[str, Any]:
-        """Consume the attempt and return verified claims."""
+        """Consume the attempt and return verified claims with `groups`."""
         attempt = self._consume(state, browser_key)
         metadata = self._metadata()
         methods = metadata.get(
@@ -341,9 +341,11 @@ class OIDCService:
         claims = self._id_claims(
             tokens.get('id_token'), metadata['jwks_uri'], attempt.nonce,
         )
+        groups_claim = settings.OIDC_GROUPS_CLAIM
         userinfo = metadata.get('userinfo_endpoint')
         if userinfo and any(
-            key not in claims for key in ('groups', 'email', 'email_verified')
+            key not in claims
+            for key in (groups_claim, 'email', 'email_verified')
         ):
             token = tokens.get('access_token')
             if isinstance(token, str) and token:
@@ -359,7 +361,7 @@ class OIDCService:
                     raise _reject(
                         'The UserInfo subject does not match the ID token.',
                     )
-                claims.setdefault('groups', profile.get('groups'))
+                claims.setdefault(groups_claim, profile.get(groups_claim))
                 if 'email' not in claims:
                     claims.update(
                         email=profile.get('email'),
@@ -371,7 +373,7 @@ class OIDCService:
                     )
                 for key in ('given_name', 'family_name'):
                     claims.setdefault(key, profile.get(key))
-        groups = claims.get('groups')
+        groups = claims.get(groups_claim)
         if not isinstance(groups, list) or any(
             not isinstance(name, str)
             or not name
@@ -384,4 +386,5 @@ class OIDCService:
                 _('The identity provider sent no valid group list.'),
                 reason='The provider did not return a valid groups claim.',
             )
+        claims['groups'] = groups
         return claims

@@ -81,7 +81,15 @@ def test_oidc_does_not_infer_a_workspace_for_an_invalid_id(
 
 
 @pytest.fixture
-def fake_provider(mocker: Any) -> Callable[[dict[str, Any]], None]:
+def provider_profile() -> dict[str, Any]:
+    """Return the claims to serve from UserInfo when enabled."""
+    return {}
+
+
+@pytest.fixture
+def fake_provider(
+    mocker: Any, provider_profile: dict[str, Any],
+) -> Callable[[dict[str, Any]], None]:
     key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
     public_key = jwt.algorithms.RSAAlgorithm.to_jwk(
         key.public_key(), as_dict=True,
@@ -90,19 +98,27 @@ def fake_provider(mocker: Any) -> Callable[[dict[str, Any]], None]:
 
     def request(method: str, url: str, **kwargs: Any) -> dict[str, Any]:
         if url == ISSUER + '.well-known/openid-configuration':
-            return {
+            metadata = {
                 'issuer': ISSUER,
                 'authorization_endpoint': 'https://sso.example.org/authorize',
                 'token_endpoint': 'https://sso.example.org/token',
                 'jwks_uri': 'https://sso.example.org/jwks',
             }
+            if provider_profile:
+                metadata['userinfo_endpoint'] = 'https://sso.example.org/me'
+            return metadata
         if url == 'https://sso.example.org/jwks':
             return {'keys': [{**public_key, 'kid': 'test'}]}
+        if url == 'https://sso.example.org/me':
+            assert method == 'GET'
+            assert kwargs['headers'] == {'Authorization': 'Bearer test-token'}
+            return provider_profile
         assert method == 'POST'
         assert url == 'https://sso.example.org/token'
         assert kwargs['data']['redirect_uri'] == CALLBACK
         assert kwargs['data']['code_verifier'] == claims.pop('_verifier')
         return {
+            'access_token': 'test-token',
             'id_token': jwt.encode(
                 claims, key, algorithm='RS256', headers={'kid': 'test'},
             ),
@@ -199,10 +215,53 @@ def test_callback_requires_same_browser_and_consumes_state(
         service.exchange('code', state, 'b' * 43)
     assert 'does not match this browser' in wrong_browser.value.reason
 
-    assert service.exchange('code', state, BROWSER_KEY)['sub'] == 'subject'
+    claims = service.exchange('code', state, BROWSER_KEY)
+    assert claims['sub'] == 'subject'
+    assert claims['groups'] == ['operations']
     with pytest.raises(OIDCError) as consumed:
         service.exchange('code', state, BROWSER_KEY)
     assert 'missing or expired' in consumed.value.reason
+
+
+@pytest.mark.parametrize('source', ['id_token', 'userinfo'])
+def test_callback_uses_configured_groups_claim(
+    service: OIDCService,
+    oidc_settings: Any,
+    fake_provider: Callable[[dict[str, Any]], None],
+    provider_profile: dict[str, Any],
+    source: str,
+) -> None:
+    """Use the named claim and prefer the token over UserInfo."""
+    oidc_settings.OIDC_GROUPS_CLAIM = 'roles'
+    provider_profile.update(sub='subject', roles=['from-userinfo'])
+    state = _start(service, fake_provider)
+    if source == 'id_token':
+        fake_provider({'roles': ['from-id-token']})
+        expected = ['from-id-token']
+    else:
+        # Make the missing roles claim the only reason to fetch UserInfo.
+        fake_provider({'email': 'user@example.org', 'email_verified': True})
+        expected = ['from-userinfo']
+
+    claims = service.exchange('code', state, BROWSER_KEY)
+
+    assert claims['groups'] == expected
+
+
+@pytest.mark.parametrize('overrides', [{}, {'roles': 'not-a-list'}])
+def test_callback_rejects_missing_or_invalid_configured_groups_claim(
+    service: OIDCService,
+    oidc_settings: Any,
+    fake_provider: Callable[[dict[str, Any]], None],
+    overrides: dict[str, Any],
+) -> None:
+    """Reject an unusable configured claim even when groups is valid."""
+    oidc_settings.OIDC_GROUPS_CLAIM = 'roles'
+    state = _start(service, fake_provider)
+    fake_provider(overrides)
+
+    with pytest.raises(OIDCError, match='no valid group list'):
+        service.exchange('code', state, BROWSER_KEY)
 
 
 @pytest.mark.parametrize(
