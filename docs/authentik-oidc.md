@@ -2,7 +2,10 @@
 
 1. Create an OAuth2/OpenID Provider and link it to an Authentik application.
    Select a confidential client and an RSA signing key (RS256). Set one strict
-   redirect URI: `https://workflows.example.org/oauth/oidc/callback/`.
+   redirect URI in Authentik. Pneumatic adds `/oauth/oidc/callback/` to its
+   public `FRONTEND_URL`. For example, if `FRONTEND_URL` is
+   `https://workflows.example.org`, register
+   `https://workflows.example.org/oauth/oidc/callback/`.
 2. Assign only the users who can sign in to this workspace to the Authentik
    application. Add an OAuth2 scope mapping with scope name `groups` to the
    provider. Return only group names that can grant access to Pneumatic. Make
@@ -21,17 +24,18 @@
    ```
 
 3. Set these deployment variables. Use the exact issuer from Authentik’s OpenID
-   configuration document, including any trailing slash. Set `SSO_AUTH` and
+   configuration document, including any trailing slash. Set `FRONTEND_URL` to
+   the public HTTPS address of Pneumatic, without a path. Set `SSO_AUTH` and
    `SSO_PROVIDER` on the backend and frontend. Keep the client secret on the
-   backend.
+   backend. Pneumatic no longer reads `OIDC_REDIRECT_URI`.
 
    ```text
    SSO_AUTH=yes
    SSO_PROVIDER=oidc
+   FRONTEND_URL=https://workflows.example.org
    OIDC_ISSUER=https://sso.example.org/application/o/pneumatic/
    OIDC_CLIENT_ID=your-client-id
    OIDC_CLIENT_SECRET=your-client-secret
-   OIDC_REDIRECT_URI=https://workflows.example.org/oauth/oidc/callback/
    OIDC_AUTO_CREATE_USERS=no
    OIDC_AUTO_LOGIN=no
    OIDC_ADMIN_GROUP=pneumatic-admins

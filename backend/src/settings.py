@@ -602,7 +602,6 @@ class Common(Configuration):
     OIDC_ISSUER = env.get('OIDC_ISSUER', '')
     OIDC_CLIENT_ID = env.get('OIDC_CLIENT_ID', '')
     OIDC_CLIENT_SECRET = env.get('OIDC_CLIENT_SECRET', '')
-    OIDC_REDIRECT_URI = env.get('OIDC_REDIRECT_URI', '')
     OIDC_SCOPES = env.get('OIDC_SCOPES') or 'openid email profile groups'
     OIDC_GROUPS_CLAIM = env.get('OIDC_GROUPS_CLAIM') or 'groups'
     OIDC_ACCOUNT_ID = env.get('OIDC_ACCOUNT_ID', '')

@@ -34,7 +34,7 @@ def oidc_settings(settings: Any) -> Any:
     settings.OIDC_ISSUER = ISSUER
     settings.OIDC_CLIENT_ID = 'pneumatic'
     settings.OIDC_CLIENT_SECRET = 'client-secret'
-    settings.OIDC_REDIRECT_URI = CALLBACK
+    settings.FRONTEND_URL = 'https://workflows.example.org'
     settings.OIDC_ACCOUNT_ID = ''
     cache.clear()
     return settings
@@ -44,6 +44,46 @@ def oidc_settings(settings: Any) -> Any:
 def service(oidc_settings: Any) -> OIDCService:
     oidc_settings.OIDC_ACCOUNT_ID = '123'
     return OIDCService()
+
+
+@pytest.mark.parametrize('trailing_slash', ['', '/'])
+def test_oidc_derives_the_callback_from_the_frontend(
+    oidc_settings: Any, trailing_slash: str,
+) -> None:
+    """Use the public frontend host and port with the fixed callback path."""
+    oidc_settings.FRONTEND_URL = (
+        f'https://workflows.example.org:8443{trailing_slash}'
+    )
+    oidc_settings.OIDC_ACCOUNT_ID = '123'
+
+    assert OIDCService().redirect_uri == (
+        'https://workflows.example.org:8443/oauth/oidc/callback/'
+    )
+
+
+@pytest.mark.parametrize(
+    'frontend_url',
+    [
+        '',
+        'http://workflows.example.org',
+        'https://workflows.example.org/path',
+        'https://workflows.example.org?key=value',
+        'https://workflows.example.org#section',
+    ],
+)
+def test_oidc_requires_a_public_https_frontend_origin(
+    oidc_settings: Any, frontend_url: str,
+) -> None:
+    """Name the setting to fix when the callback cannot use it."""
+    oidc_settings.FRONTEND_URL = frontend_url
+    oidc_settings.OIDC_ACCOUNT_ID = '123'
+
+    with pytest.raises(OIDCError) as exc:
+        OIDCService()
+
+    assert exc.value.reason == (
+        'Set FRONTEND_URL to the public HTTPS address with no path.'
+    )
 
 
 def test_oidc_uses_the_only_workspace(oidc_settings: Any) -> None:
@@ -149,6 +189,7 @@ def _start(
     url = service.start(BROWSER_KEY)
     params = parse_qs(urlsplit(url).query)
     assert params['scope'] == ['openid email profile groups']
+    assert params['redirect_uri'] == [CALLBACK]
     assert params['code_challenge_method'] == ['S256']
     state = params['state'][0]
     now = int(timezone.now().timestamp())

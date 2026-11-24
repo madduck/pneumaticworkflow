@@ -37,8 +37,11 @@ def _reject(reason: str) -> OIDCError:
     )
 
 
-def _https_url(value: Any) -> str:
-    reason = 'The configuration contains a missing or invalid HTTPS URL.'
+def _https_url(
+    value: Any,
+    *,
+    reason: str = 'The configuration contains a missing or invalid HTTPS URL.',
+) -> str:
     if not isinstance(value, str):
         raise _reject(reason)
     try:
@@ -100,7 +103,13 @@ class OIDCService:
         self.issuer = _https_url(settings.OIDC_ISSUER)
         self.client_id = settings.OIDC_CLIENT_ID
         self.client_secret = settings.OIDC_CLIENT_SECRET
-        self.redirect_uri = _https_url(settings.OIDC_REDIRECT_URI)
+        reason = 'Set FRONTEND_URL to the public HTTPS address with no path.'
+        frontend = urlsplit(_https_url(settings.FRONTEND_URL, reason=reason))
+        if frontend.path not in ('', '/') or frontend.query:
+            raise _reject(reason)
+        self.redirect_uri = urlunsplit(
+            frontend._replace(path='/oauth/oidc/callback/'),
+        )
         if (
             not self.client_id
             or not self.client_secret
