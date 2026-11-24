@@ -2,15 +2,6 @@ import { mapOutputToCompleteTask } from '../mappers';
 import { makeExtraField } from '../../__stubs__/fields.factory';
 import { EExtraFieldType, IExtraField } from '../../types/template';
 
-jest.mock('../dateTime', () => ({
-  getEndOfDayTsp: jest.fn((v: string) => `endOfDay(${v})`),
-  toDateString: jest.fn(),
-  toTspDate: jest.fn(),
-  toISOStringFromTsp: jest.fn(),
-  formatDateToISOInWorkflow: jest.fn(),
-  formatDateToISOInTask: jest.fn(),
-}));
-
 const makeField = (overrides: Partial<IExtraField>) =>
   makeExtraField({
     name: 'Test',
@@ -18,10 +9,6 @@ const makeField = (overrides: Partial<IExtraField>) =>
   });
 
 describe('mapOutputToCompleteTask', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
-
   it('returns empty array as-is', () => {
     expect(mapOutputToCompleteTask([])).toEqual([]);
   });

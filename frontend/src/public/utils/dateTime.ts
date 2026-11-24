@@ -157,10 +157,9 @@ export const isExpired = (deadlineDateISO: string | null, compareDateISO?: strin
   return isAfter(compareDate, deadLineDate);
 };
 
-export const DATE_STRING_MOMENT_TEMPLATE = 'MMM DD, YYYY';
-export const DATE_STRING_FNS_TEMPLATE = 'MMM dd, yyyy';
+export const WORKFLOW_FIELD_DATE_TIME_FORMAT = 'MMM dd, yyyy, HH:mm';
 
-const UNIX_SECONDS_RE = /^[0-9]+(\.[0-9]+)?$/;
+const UNIX_SECONDS_RE = /^-?[0-9]+(\.[0-9]+)?$/;
 
 export const parseUnixSeconds = (value: unknown): number | null => {
   if (typeof value === 'number' && Number.isFinite(value)) {
@@ -174,60 +173,17 @@ export const parseUnixSeconds = (value: unknown): number | null => {
   return null;
 };
 
-export const getEndOfDayTsp = (date: string | Date): number | null => {
-  if (!date) return null;
+export const fromUnixSeconds = (value: unknown): Date | null => {
+  const seconds = parseUnixSeconds(value);
+  if (seconds === null) return null;
 
-  const unixSeconds = parseUnixSeconds(date);
-  if (unixSeconds !== null) {
-    return unixSeconds;
-  }
-  const momentDate = moment(date);
-
-  if (!momentDate.isValid()) {
-    throw new Error(`getEndOfDayTsp: Invalid date. Received: ${date} (type: ${typeof date})`);
-  }
-
-  return momentDate.endOf('day').unix();
+  const date = new Date(seconds * 1000);
+  return Number.isNaN(date.getTime()) ? null : date;
 };
 
-export const toDate = (date: number | string | null): Date | null => {
-  if (!date) return null;
-  const unixSeconds = parseUnixSeconds(date);
-  if (unixSeconds !== null) {
-    return moment(unixSeconds * 1000).toDate();
-  }
-  if (typeof date === 'string') {
-    return moment(date).toDate();
-  }
-  throw new Error(`toDate: Invalid date format. Received: ${date} (type: ${typeof date})`);
-};
-
-export const toDateString = (date: Date | number | string, timezone?: string): string | null => {
-  if (!date && date !== 0) return null;
-
-  const zone = timezone || 'UTC';
-  let momentDate;
-
-  if (date instanceof Date) {
-    momentDate = moment(date).tz(zone);
-  } else {
-    const unixSeconds = parseUnixSeconds(date);
-    if (unixSeconds !== null) {
-      momentDate = moment.tz(unixSeconds * 1000, zone);
-    } else if (typeof date === 'string') {
-      const isoDate = moment.utc(date, moment.ISO_8601, true);
-      const formattedDate = moment(date, DATE_STRING_MOMENT_TEMPLATE, true);
-      momentDate = isoDate.isValid() ? isoDate.tz(zone) : formattedDate;
-    } else {
-      return null;
-    }
-  }
-
-  if (!momentDate.isValid()) {
-    return null;
-  }
-
-  return momentDate.format(DATE_STRING_MOMENT_TEMPLATE);
+export const formatWorkflowFieldDateTime = (value: unknown): string | null => {
+  const date = fromUnixSeconds(value);
+  return date ? format(date, WORKFLOW_FIELD_DATE_TIME_FORMAT) : null;
 };
 
 export const toTspDate = (date?: string | Date | null): number | null => {

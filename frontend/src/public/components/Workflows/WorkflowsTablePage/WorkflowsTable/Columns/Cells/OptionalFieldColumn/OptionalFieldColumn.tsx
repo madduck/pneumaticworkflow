@@ -2,7 +2,7 @@ import React from 'react';
 import { useSelector } from 'react-redux';
 import type { CellProps } from 'react-table';
 
-import { toDateString } from '../../../../../../../utils/dateTime';
+import { formatWorkflowFieldDateTime } from '../../../../../../../utils/dateTime';
 import type { TTableColumns } from '../../../types';
 import { EExtraFieldType, ETaskPerformerType } from '../../../../../../../types/template';
 import type { ITableViewFields } from '../../../../../../../types/template';
@@ -16,7 +16,6 @@ import { urlWithProtocolRegex } from '../../../../../../../constants/defaultValu
 import styles from './OptionalFieldColumn.css';
 import { getRegularGroupsList } from '../../../../../../../redux/selectors/groups';
 import { getAccountsUsers } from '../../../../../../../redux/selectors/accounts';
-import { getTimezone } from '../../../../../../../redux/selectors/authUser';
 
 type TProps = React.PropsWithChildren<CellProps<TTableColumns, ITableViewFields>>;
 
@@ -27,7 +26,6 @@ export function OptionalFieldColumn({ value }: TProps) {
 
   const users = useSelector(getAccountsUsers);
   const groups = useSelector(getRegularGroupsList);
-  const timezone = useSelector(getTimezone);
 
   const isUrl = (str: string) => {
     return urlWithProtocolRegex.test(str);
@@ -115,14 +113,14 @@ export function OptionalFieldColumn({ value }: TProps) {
   };
 
   const getFieldContent = (type: EExtraFieldType, fieldValue: ITableViewFields) => {
-    if (!fieldValue || !fieldValue.value) {
+    if (type === EExtraFieldType.Date) {
+      return formatWorkflowFieldDateTime(fieldValue.value);
+    }
+    if (!fieldValue.value) {
       return null;
     }
     if (type === EExtraFieldType.Text) {
       return fieldValue.clearValue;
-    }
-    if (type === EExtraFieldType.Date) {
-      return toDateString(fieldValue.value as string, timezone);
     }
     if (type === EExtraFieldType.User) {
       let unitAvatar = null;

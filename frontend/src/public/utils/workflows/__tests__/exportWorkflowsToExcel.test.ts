@@ -172,6 +172,18 @@ describe('exportWorkflowsToExcel', () => {
       expect(rows[1]).toContain('Custom value');
     });
 
+    it('exports the local date and time for a workflow date field', () => {
+      const value = String(new Date(2024, 6, 15, 23, 17).getTime() / 1000);
+      const field = { apiName: 'appointment', type: EExtraFieldType.Date, value } as ITableViewFields;
+      const rows = buildWorkflowsExportRows({
+        ...baseConfig,
+        workflows: [minimalWorkflow({ fields: [field] })],
+        selectedFields: ['appointment'],
+      });
+
+      expect(rows[1]).toEqual(['Jul 15, 2024, 23:17']);
+    });
+
     it('uses localized multipleTasksLabel for step when areMultipleTasks is true', () => {
       const workflows = [minimalWorkflow({ areMultipleTasks: true, oneActiveTaskName: null })];
       const rows = buildWorkflowsExportRows({

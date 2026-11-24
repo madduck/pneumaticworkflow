@@ -3,8 +3,7 @@ import { isArrayWithItems } from './helpers';
 import { ExtraFieldsHelper } from '../components/TemplateEdit/ExtraFields/utils/ExtraFieldsHelper';
 import { normalizeCheckboxValue } from './fields';
 import {
-  getEndOfDayTsp,
-  toDateString,
+  parseUnixSeconds,
   toTspDate,
   toISOStringFromTsp,
   formatDateToISOInWorkflow,
@@ -12,7 +11,6 @@ import {
 } from './dateTime';
 import type {
   IWorkflow,
-  IWorkflowDetailsKickoff,
   IWorkflowLogItem,
   WorkflowWithDateFields,
   WorkflowWithTspFields,
@@ -99,7 +97,7 @@ export const mapOutputToCompleteTask = (output: IExtraField[]): IExtraField[] =>
     if (item.type === 'date' && typeof item.value === 'string') {
       return {
         ...item,
-        value: getEndOfDayTsp(item.value),
+        value: parseUnixSeconds(item.value),
       };
     }
     if (item.type === 'number') {
@@ -142,25 +140,7 @@ export const formatDueDateToEditWorkflow = (payload: TEditWorkflowPayload): TEdi
     };
   }
 
-  if ('kickoff' in payload) {
-    if (!payload.kickoff?.fields?.length) return payload;
-    return {
-      ...payload,
-      kickoff: {
-        ...payload.kickoff,
-        fields: mapEndOfDayTsp(payload.kickoff.fields),
-      },
-    };
-  }
-
   return payload;
-};
-
-export const mapEndOfDayTsp = (fields: IExtraField[]): IExtraField[] => {
-  return fields.map((item: any) => ({
-    ...item,
-    value: item.type === 'date' && typeof item.value === 'string' ? getEndOfDayTsp(item.value) : item.value,
-  }));
 };
 
 export const getNormalizedKickoff = (kickoff: Pick<IRuntimeKickoffClient, 'fields'>): { [key: string]: string } => {
@@ -198,64 +178,19 @@ export const mapWorkflowsToISOStringToRedux = <T extends WorkflowWithTspFields>(
   });
 };
 
-export const mapWorkflowsForSetHighlights = (resultsFromGetHighlights: Array<IHighlightsItem>, timezone: string) => {
+export const mapWorkflowsForSetHighlights = (resultsFromGetHighlights: Array<IHighlightsItem>) => {
   return resultsFromGetHighlights.map((result) => ({
     ...result,
-    workflow: mapBackendWorkflowToRedux(result.workflow, timezone),
-    task: result.task ? formatTaskDatesForRedux(result.task, timezone) : null,
+    task: result.task ? formatTaskDatesForRedux(result.task) : null,
   }));
 };
 
-export const mapBackendWorkflowToRedux = <Workflow extends { kickoff: IWorkflowDetailsKickoff | null }>(
-  workflow: Workflow,
-  timezone: string,
-): Workflow => {
-  if (!workflow.kickoff) return workflow;
-
-  const hasOutput = workflow.kickoff.output?.length;
-  const hasFieldsets = workflow.kickoff.fieldsets?.length;
-
-  if (!hasOutput && !hasFieldsets) return workflow;
-
-  return {
-    ...workflow,
-    kickoff: {
-      ...workflow.kickoff,
-      ...(hasOutput && { output: mapTspToString(workflow.kickoff.output, timezone) }),
-      ...(hasFieldsets && {
-        fieldsets: workflow.kickoff.fieldsets!.map((fieldset) => ({
-          ...fieldset,
-          fields: mapTspToString(fieldset.fields, timezone),
-        })),
-      }),
-    },
-  };
-};
-
-export const mapBackandworkflowLogToRedux = (workflowLog: IWorkflowLogItem[], timezone: string): IWorkflowLogItem[] => {
-  return workflowLog.map((item) => mapBackendNewEventToRedux(item, timezone));
-};
-
-export const mapTspToString = (output: IExtraField[], timezone: string): IExtraField[] => {
-  return output.map((item) => {
-    if (item.type !== 'date' || item.value == null || item.value === '') {
-      return item;
-    }
-
-    if (typeof item.value !== 'string' && typeof item.value !== 'number') {
-      return item;
-    }
-
-    return {
-      ...item,
-      value: toDateString(item.value, timezone),
-    };
-  });
+export const mapBackandworkflowLogToRedux = (workflowLog: IWorkflowLogItem[]): IWorkflowLogItem[] => {
+  return workflowLog.map(mapBackendNewEventToRedux);
 };
 
 export const formatTaskDatesForRedux = <T extends TFormatTaskDates>(
   task: T,
-  timezone: string,
 ): Omit<T, 'dueDateTsp' | 'subWorkflows' | 'dateStartedTsp' | 'dateCompletedTsp'> & {
   dueDate: string | null;
   subWorkflows?: IWorkflow[] | null;
@@ -267,13 +202,6 @@ export const formatTaskDatesForRedux = <T extends TFormatTaskDates>(
     dueDate: task.dueDateTsp ? toISOStringFromTsp(task.dueDateTsp) : null,
     ...(task.dateStartedTsp && { dateStarted: toISOStringFromTsp(task.dateStartedTsp) }),
     ...(task.dateCompletedTsp && { dateCompleted: toISOStringFromTsp(task.dateCompletedTsp) }),
-    ...(task.output && { output: mapTspToString(task.output, timezone) }),
-    ...(task.fieldsets?.length && {
-      fieldsets: task.fieldsets.map((fieldset) => ({
-        ...fieldset,
-        fields: mapTspToString(fieldset.fields, timezone),
-      })),
-    }),
     ...(task.subWorkflows && {
       subWorkflows: mapWorkflowsAddComputedPropsToRedux(mapWorkflowsToISOStringToRedux(task.subWorkflows)),
     }),
@@ -284,11 +212,11 @@ export const formatTaskDatesForRedux = <T extends TFormatTaskDates>(
   return formattedTask;
 };
 
-export const mapBackendNewEventToRedux = (event: IWorkflowLogItem, timezone: string): IWorkflowLogItem => {
+export const mapBackendNewEventToRedux = (event: IWorkflowLogItem): IWorkflowLogItem => {
   if (!event.task) return event;
   return {
     ...event,
-    task: formatTaskDatesForRedux(event.task, timezone),
+    task: formatTaskDatesForRedux(event.task),
   };
 };
 

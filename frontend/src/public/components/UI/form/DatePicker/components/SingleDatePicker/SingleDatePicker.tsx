@@ -3,6 +3,7 @@ import DatePicker from 'react-datepicker';
 import { useIntl } from 'react-intl';
 
 import { useDatePickerSettings } from '../../../../../../hooks/useDatePickerSettings';
+import { WORKFLOW_FIELD_DATE_TIME_FORMAT } from '../../../../../../utils/dateTime';
 import { CustomInput } from '../CustomInput/CustomInput';
 import type { ISingleDatePickerProps } from '../../types';
 import {
@@ -17,6 +18,8 @@ export const SingleDatePicker = ({
   selected,
   onChange,
   startDay,
+  ariaLabel,
+  withTime = false,
   isClearable = true,
   selectsRange: _selectsRange,
   ...props
@@ -24,10 +27,15 @@ export const SingleDatePicker = ({
   const { formatMessage } = useIntl();
   const { locale, timezone, dateFdw } = useDatePickerSettings();
   const datePickerRef = useRef<DatePicker>(null);
-  const selectedDate = toCalendarDate(selected ?? null, timezone);
+  const selectedDate = withTime ? selected : toCalendarDate(selected, timezone);
   const clearLabel = formatMessage({ id: 'ui-input.clear' });
 
   const handleChangeDate = (date: Date | null) => {
+    if (withTime) {
+      onChange(date);
+      return;
+    }
+
     datePickerRef.current?.setOpen(false);
 
     onChange(
@@ -47,12 +55,15 @@ export const SingleDatePicker = ({
         ref={datePickerRef}
         ariaLabelClose={clearLabel}
         clearButtonTitle={clearLabel}
-        customInput={<CustomInput />}
+        customInput={<CustomInput aria-label={ariaLabel} />}
         isClearable={Boolean(isClearable && selected)}
-        shouldCloseOnSelect
+        shouldCloseOnSelect={!withTime}
+        showTimeInput={withTime}
+        timeInputLabel={withTime ? formatMessage({ id: 'ui-date-picker.local-time' }) : undefined}
+        dateFormat={withTime ? WORKFLOW_FIELD_DATE_TIME_FORMAT : props.dateFormat}
         locale={locale}
         selected={selectedDate}
-        value={selected ? formatDatePickerDisplayValue(selected, timezone) : ''}
+        value={withTime ? undefined : selected ? formatDatePickerDisplayValue(selected, timezone) : ''}
         calendarStartDay={dateFdw}
         onChange={handleChangeDate}
       />

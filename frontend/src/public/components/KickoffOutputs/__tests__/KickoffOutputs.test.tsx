@@ -7,7 +7,7 @@ import { makeFieldsetRuntime } from '../../../__stubs__/fieldsets.factory';
 import { EExtraFieldType, IExtraField } from '../../../types/template';
 import { Attachments } from '../../Attachments';
 
-type TOutputMockProps = Pick<IExtraField, 'apiName' | 'name'>;
+type TOutputMockProps = Pick<IExtraField, 'apiName' | 'name' | 'value'>;
 
 jest.mock('../../Attachments', () => ({
   Attachments: jest.fn(() => null),
@@ -22,8 +22,10 @@ jest.mock('../../../utils/getConfig', () => ({
 jest.mock('../CheckboxOutput', () => ({ CheckboxOutput: () => null }));
 jest.mock('../RadioOutput', () => ({ RadioOutput: () => null }));
 jest.mock('../TextOutput', () => ({
-  TextOutput: jest.fn(({ apiName, name }: TOutputMockProps) => (
-    <div data-testid={`text-output-${apiName}`}>{name}</div>
+  TextOutput: jest.fn(({ apiName, name, value }: TOutputMockProps) => (
+    <div data-testid={`text-output-${apiName}`} data-value={value}>
+      {name}
+    </div>
   )),
 }));
 jest.mock('../UrlOutput', () => ({ UrlOutput: () => null }));
@@ -123,6 +125,17 @@ describe('KickoffOutputs', () => {
     expect(screen.getByTestId('text-output-email')).toBeInTheDocument();
     expect(screen.getByTestId('text-output-city')).toBeInTheDocument();
     expect(screen.queryByTestId('text-output-phone')).toBeNull();
+  });
+
+  it('displays the browser date and time for both stand-alone and grouped date fields', () => {
+    const value = String(new Date(2024, 6, 15, 23, 17).getTime() / 1000);
+    const dateField = makeExtraField({ apiName: 'appointment', type: EExtraFieldType.Date, value });
+    const fieldset = makeFieldsetRuntime({ fields: [{ ...dateField, apiName: 'grouped-appointment' }] });
+
+    render(<KickoffOutputs viewMode={EKickoffOutputsViewModes.Short} outputs={[dateField]} fieldsets={[fieldset]} />);
+
+    expect(screen.getByTestId('text-output-appointment')).toHaveAttribute('data-value', 'Jul 15, 2024, 23:17');
+    expect(screen.getByTestId('text-output-grouped-appointment')).toHaveAttribute('data-value', 'Jul 15, 2024, 23:17');
   });
 
   it('renders a file field inside a fieldset that has no value but has attachments', () => {

@@ -11,7 +11,6 @@ export interface IExportWorkflowsToExcelConfig {
   groups: IGroup[];
   selectedFields: string[];
   optionalFieldsFromWorkflow?: ITableViewFields[];
-  timezone?: string;
   headerLabels: Record<string, string>;
   multipleTasksLabel: string;
   /** Localized template for missing group in performers, use {id} placeholder for group ID */

@@ -20,7 +20,7 @@ const defaultField: IExtraField = {
   order: 0,
   userId: null,
   groupId: null,
-  description: 'Select a due date',
+  description: 'Select a date and time',
   isRequired: false,
   isHidden: false,
   value: '',
@@ -33,6 +33,13 @@ const meta: Meta<IWorkflowExtraFieldProps> = {
   title: 'UI/ExtraFieldDate',
   component: ExtraFieldDate,
   tags: ['autodocs'],
+  parameters: {
+    docs: {
+      description: {
+        component: 'The field shows the date and time in the browser’s time zone. Workflows store the time in UTC.',
+      },
+    },
+  },
 };
 
 export default meta;
@@ -52,7 +59,7 @@ export const Default: Story = {
 
 export const Required: Story = {
   args: {
-    field: { ...defaultField, value: '2024-01-01', isRequired: true },
+    field: { ...defaultField, isRequired: true },
     intl,
     mode: EExtraFieldMode.Kickoff,
     editField,
@@ -64,7 +71,7 @@ export const Required: Story = {
 
 export const Disabled: Story = {
   args: {
-    field: { ...defaultField, value: '2024-01-01' },
+    field: defaultField,
     intl,
     mode: EExtraFieldMode.Kickoff,
     editField,

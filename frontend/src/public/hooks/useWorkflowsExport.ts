@@ -16,7 +16,6 @@ import {
 } from '../redux/selectors/workflows';
 import { getAccountsUsers } from '../redux/selectors/accounts';
 import { getRegularGroupsList } from '../redux/selectors/groups';
-import { getTimezone } from '../redux/selectors/authUser';
 import {
   buildWorkflowsExportRows,
   buildWorkflowsXlsxBuffer,
@@ -62,7 +61,6 @@ export function useWorkflowsExport() {
   const searchText = useSelector(getWorkflowsSearchText);
   const users = useSelector(getAccountsUsers);
   const groups = useSelector(getRegularGroupsList);
-  const timezone = useSelector(getTimezone);
 
   const handleExportClick = useCallback(
     async (exportFormat: TWorkflowExportFormat) => {
@@ -97,7 +95,6 @@ export function useWorkflowsExport() {
           groups,
           selectedFields: fields,
           optionalFieldsFromWorkflow,
-          timezone: timezone ?? undefined,
           headerLabels,
           multipleTasksLabel: formatMessage({ id: 'workflows.multiple-active-tasks' }),
           deletedGroupFallbackTemplate: formatMessage({ id: 'workflows.export-deleted-group' }, { id: '{id}' }),
@@ -127,7 +124,6 @@ export function useWorkflowsExport() {
       searchText,
       users,
       groups,
-      timezone,
     ],
   );
 
