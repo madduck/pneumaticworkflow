@@ -19,7 +19,6 @@ from src.accounts.models import Account
 from ..models import OIDCLoginAttempt  # noqa: TID252
 from .exceptions import AuthException
 
-_SCOPE = 'openid email profile groups'
 _ATTEMPT_TTL = timedelta(minutes=10)
 
 
@@ -198,7 +197,7 @@ class OIDCService:
             {
                 'client_id': self.client_id,
                 'redirect_uri': self.redirect_uri,
-                'scope': _SCOPE,
+                'scope': settings.OIDC_SCOPES,
                 'state': state,
                 'nonce': nonce,
                 'code_challenge': challenge,

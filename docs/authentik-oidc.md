@@ -47,12 +47,17 @@
    (`sub`) belongs to that member. Then run
    `python manage.py link_oidc_user USER_ID SUBJECT` on the backend.
 
-Pneumatic requests `openid email profile groups`. It reuses Pneumatic groups
-with the same exact name and creates missing groups. A matching group can grant
-access to existing workflows. Group and admin changes take effect at the next
-OIDC sign-in. When `OIDC_ADMIN_GROUP` is set, only its members among OIDC-linked
-users get workspace admin rights. The workspace owner keeps local access. Omit
-`OIDC_ADMIN_GROUP` if Authentik must not manage workspace admin rights.
+By default, Pneumatic requests `openid email profile groups`. If your provider
+uses different scopes, set `OIDC_SCOPES` on the backend to a space-separated
+list that includes `openid`. The provider must still return a `groups` claim
+(the user’s group list) for sign-in to succeed.
+
+Pneumatic reuses groups with the same exact name and creates missing groups. A
+matching group can grant access to existing workflows. Group and admin changes
+take effect at the next OIDC sign-in. When `OIDC_ADMIN_GROUP` is set, only its
+members among OIDC-linked users get workspace admin rights. The workspace owner
+keeps local access. Omit `OIDC_ADMIN_GROUP` if Authentik must not manage
+workspace admin rights.
 
 If you want Authentik users without an invitation to join, set
 `OIDC_AUTO_CREATE_USERS=yes` after you test the application’s access policy.

@@ -603,6 +603,7 @@ class Common(Configuration):
     OIDC_CLIENT_ID = env.get('OIDC_CLIENT_ID', '')
     OIDC_CLIENT_SECRET = env.get('OIDC_CLIENT_SECRET', '')
     OIDC_REDIRECT_URI = env.get('OIDC_REDIRECT_URI', '')
+    OIDC_SCOPES = env.get('OIDC_SCOPES') or 'openid email profile groups'
     OIDC_ACCOUNT_ID = env.get('OIDC_ACCOUNT_ID', '')
     OIDC_AUTO_CREATE_USERS = env.get('OIDC_AUTO_CREATE_USERS') == 'yes'
     OIDC_ADMIN_GROUP = env.get('OIDC_ADMIN_GROUP', '')

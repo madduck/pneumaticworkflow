@@ -114,6 +114,19 @@ def fake_provider(mocker: Any) -> Callable[[dict[str, Any]], None]:
     return claims.update
 
 
+def test_start_uses_configured_scopes(
+    oidc_settings: Any,
+    fake_provider: Callable[[dict[str, Any]], None],
+) -> None:
+    """Send the configured scopes instead of the defaults."""
+    oidc_settings.OIDC_ACCOUNT_ID = '123'
+    oidc_settings.OIDC_SCOPES = 'openid email roles'
+
+    url = OIDCService().start(BROWSER_KEY)
+
+    assert parse_qs(urlsplit(url).query)['scope'] == ['openid email roles']
+
+
 def _start(
     service: OIDCService, set_claims: Callable[[dict[str, Any]], None],
 ) -> str:
