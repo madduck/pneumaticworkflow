@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { IntlProvider } from 'react-intl';
 
@@ -45,6 +45,42 @@ describe('SingleDatePicker', () => {
     await waitFor(() => {
       expect(onChange).toHaveBeenCalledWith(null);
     });
+  });
+
+  it('uses the default local time when the user picks the first day', () => {
+    const onChange = jest.fn();
+    renderSingleDatePicker({
+      withTime: true,
+      defaultTime: { hours: 17, minutes: 30 },
+      selected: null,
+      openToDate: new Date(2024, 6, 15),
+      onChange,
+    });
+    const input = screen.getByRole('textbox');
+    expect(input).toHaveValue('');
+    expect(onChange).not.toHaveBeenCalled();
+
+    fireEvent.click(input);
+    fireEvent.click(screen.getByText('15', { selector: '.react-datepicker__day' }));
+
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenCalledWith(new Date(2024, 6, 15, 17, 30));
+  });
+
+  it('lets the user enter a different time before picking a day', () => {
+    const onChange = jest.fn();
+    const { container } = renderSingleDatePicker({
+      withTime: true,
+      defaultTime: { hours: 17, minutes: 30 },
+      selected: null,
+      openToDate: new Date(2024, 6, 15),
+      onChange,
+    });
+    fireEvent.click(screen.getByRole('textbox'));
+    const timeInput = container.querySelector('input[type="time"]')!;
+    fireEvent.change(timeInput, { target: { value: '00:00' } });
+
+    expect(onChange).toHaveBeenCalledWith(new Date(2024, 6, 15, 0, 0));
   });
 
   it('does not render built-in clear button when isClearable is false', () => {

@@ -11,14 +11,18 @@ import { FieldWithName } from '../utils/FieldWithName';
 import { FieldLabel } from '../utils/FieldLabel';
 import type { IWorkflowExtraFieldProps } from '../types';
 import { DatePickerCustom } from '../../../UI/form/DatePicker';
+import type { ISingleDatePickerProps } from '../../../UI/form/DatePicker/types';
 import { fromUnixSeconds, toTspDate } from '../../../../utils/dateTime';
 
 import fieldStyles from './ExtraFieldDate.css';
 import styles from '../../KickoffRedux/KickoffRedux.css';
 
+type IExtraFieldDateProps = IWorkflowExtraFieldProps & Pick<ISingleDatePickerProps, 'defaultTime'>;
+
 export function ExtraFieldDate({
   field,
   field: { value, name, isRequired },
+  defaultTime,
   intl,
   descriptionPlaceholder = intl.formatMessage({ id: 'template.kick-off-form-field-description-placeholder' }),
   namePlaceholder = intl.formatMessage({ id: 'template.kick-off-form-field-name-placeholder' }),
@@ -28,7 +32,7 @@ export function ExtraFieldDate({
   labelBackgroundColor,
   labelPosition,
   innerRef,
-}: IWorkflowExtraFieldProps): JSX.Element {
+}: IExtraFieldDateProps): JSX.Element {
   const handleChangeName = React.useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       editField({ name: e.target.value });
@@ -86,6 +90,7 @@ export function ExtraFieldDate({
           <DatePickerCustom
             withTime
             ariaLabel={name}
+            defaultTime={defaultTime}
             disabled={isDisabled}
             isClearable={false}
             onChange={handleChangeDate}

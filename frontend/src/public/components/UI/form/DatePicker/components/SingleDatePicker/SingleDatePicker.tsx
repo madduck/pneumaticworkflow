@@ -20,6 +20,7 @@ export const SingleDatePicker = ({
   startDay,
   ariaLabel,
   withTime = false,
+  defaultTime,
   isClearable = true,
   selectsRange: _selectsRange,
   ...props
@@ -30,8 +31,19 @@ export const SingleDatePicker = ({
   const selectedDate = withTime ? selected : toCalendarDate(selected, timezone);
   const clearLabel = formatMessage({ id: 'ui-input.clear' });
 
-  const handleChangeDate = (date: Date | null) => {
+  const handleChangeDate = (
+    date: Date | null,
+    event?: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>,
+  ) => {
     if (withTime) {
+      // react-datepicker sends a day selection event, but no event for edits in the time input.
+      if (date && event && !selected && defaultTime) {
+        const dateWithTime = new Date(date);
+        dateWithTime.setHours(defaultTime.hours, defaultTime.minutes, 0, 0);
+        onChange(dateWithTime);
+        return;
+      }
+
       onChange(date);
       return;
     }

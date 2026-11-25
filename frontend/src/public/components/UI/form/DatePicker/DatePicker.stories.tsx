@@ -96,6 +96,10 @@ export const EndOfDay: TSingleStory = {
   render: () => <SingleDatePickerWithState initialDate={new Date('2024-06-15')} />,
 };
 
+export const WithDefaultTime: TSingleStory = {
+  render: () => <SingleDatePickerWithState withTime defaultTime={{ hours: 17, minutes: 30 }} />,
+};
+
 export const Inline: TSingleStory = {
   render: () => <SingleDatePickerWithState initialDate={new Date('2024-06-15')} inline startDay />,
 };

@@ -63,10 +63,11 @@ describe('ExtraFieldDate', () => {
     jest.clearAllMocks();
   });
 
-  it('shows and edits the saved time in the browser timezone', async () => {
+  it('preserves the saved time over the default and lets users edit it', async () => {
     const saved = new Date(2024, 6, 15, 8, 7).getTime() / 1000;
     const field = { ...baseProps.field, value: String(saved) };
-    const { rerender } = render(<ExtraFieldDate {...baseProps} field={field} />, { wrapper });
+    const props = { ...baseProps, defaultTime: { hours: 17, minutes: 30 } };
+    const { rerender } = render(<ExtraFieldDate {...props} field={field} />, { wrapper });
     const input = screen.getByRole('textbox', { name: 'Due Date' });
     expect(input).toHaveValue('Jul 15, 2024, 08:07');
 
@@ -80,16 +81,27 @@ describe('ExtraFieldDate', () => {
 
     const edited = new Date(2024, 6, 15, 23, 17).getTime() / 1000;
     expect(mockEditField).toHaveBeenLastCalledWith({ value: edited });
-    rerender(<ExtraFieldDate {...baseProps} field={{ ...field, value: edited }} />);
+    rerender(<ExtraFieldDate {...props} field={{ ...field, value: edited }} />);
     expect(input).toHaveValue('Jul 15, 2024, 23:17');
+
+    fireEvent.click(screen.getByText('16', { selector: '.react-datepicker__day' }));
+    expect(mockEditField).toHaveBeenLastCalledWith({ value: new Date(2024, 6, 16, 23, 17).getTime() / 1000 });
   });
 
-  it('keeps the time control open after selecting a day in an empty field', async () => {
+  it.each([
+    { defaultTime: undefined, time: '00:00' },
+    { defaultTime: { hours: 17, minutes: 30 }, time: '17:30' },
+  ])('keeps the time control open at $time after selecting a day in an empty field', async ({ defaultTime, time }) => {
     // The form reflects edits back into the field, as the runtime form does.
     const Form = () => {
       const [field, setField] = React.useState(baseProps.field);
       return (
-        <ExtraFieldDate {...baseProps} field={field} editField={(updates) => setField({ ...field, ...updates })} />
+        <ExtraFieldDate
+          {...baseProps}
+          defaultTime={defaultTime}
+          field={field}
+          editField={(updates) => setField({ ...field, ...updates })}
+        />
       );
     };
     render(<Form />, { wrapper });
@@ -98,7 +110,7 @@ describe('ExtraFieldDate', () => {
       screen.getByText('15', { selector: '.react-datepicker__day:not(.react-datepicker__day--outside-month)' }),
     );
 
-    await waitFor(() => expect(document.querySelector('input[type="time"]')).toHaveValue('00:00'));
+    await waitFor(() => expect(document.querySelector('input[type="time"]')).toHaveValue(time));
   });
 
   it('clears an existing value and disables edits in a disabled field', () => {
