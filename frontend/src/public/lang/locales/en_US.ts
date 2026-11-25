@@ -755,6 +755,8 @@ export const enMessages = {
   'template.active-if-template-enabled': 'The link will only be active if the template is enabled',
   'template.kick-off-add-options': 'Add options',
   'template.datasets': 'Dataset',
+  'template.field-options': 'Field options',
+  'template.field-default-value': 'Default value',
   'template.field-datasets-menu': 'Datasets',
   'template.field-dataset-clear': 'Clear dataset',
   'template.kick-off-form-delete-component': 'Delete',

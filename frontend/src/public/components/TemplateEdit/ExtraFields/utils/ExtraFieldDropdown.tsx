@@ -7,12 +7,14 @@ import { IntlMessages } from '../../../IntlMessages';
 import { ArrowDownIcon, ArrowRightIcon, ArrowUpIcon, BurgerIcon, DropdownCrossIcon, TrashIcon } from '../../../icons';
 import type { TDropdownOption } from '../../../UI';
 import { Dropdown } from '../../../UI';
+import { TextareaField } from '../../../UI/Fields/TextareaField';
 import type { IKickoffDropdownProps } from './types';
 
 import styles from '../../KickoffRedux/KickoffRedux.css';
 
 export function ExtraFieldDropdown({
   apiName,
+  defaultValue = '',
   isRequired,
   isRequiredDisabled,
   isHidden = false,
@@ -58,6 +60,7 @@ export function ExtraFieldDropdown({
     <Dropdown
       direction="right"
       className={styles['dropdown-wrapper']}
+      toggleProps={{ 'aria-label': formatMessage({ id: 'template.field-options' }) }}
       renderToggle={(isOpen) => {
         const DropdownIcon = isOpen ? DropdownCrossIcon : BurgerIcon;
 
@@ -139,7 +142,16 @@ export function ExtraFieldDropdown({
       renderMenuContent={(renderedOptions) => (
         <>
           {apiName && <div className={styles['dropdown-header']}>{apiName}</div>}
-          <div className={styles['dropdown-items-wrapper']}>{renderedOptions}</div>
+          <div className={styles['dropdown-items-wrapper']}>
+            <div className={styles['dropdown-default-value']}>
+              <TextareaField
+                title={formatMessage({ id: 'template.field-default-value' })}
+                value={defaultValue}
+                onChange={(event) => onEditField({ default: event.currentTarget.value })}
+              />
+            </div>
+            {renderedOptions}
+          </div>
         </>
       )}
       menuClassName={styles['dropdown-menu']}

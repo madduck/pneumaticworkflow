@@ -7,6 +7,7 @@ export interface IDatasetOption {
 
 export interface IKickoffDropdownProps {
   apiName?: string;
+  defaultValue?: string;
   isRequired: boolean;
   isRequiredDisabled: boolean;
   isHidden?: boolean;
