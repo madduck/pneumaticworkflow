@@ -166,7 +166,10 @@ describe('ExtraFieldsHelper', () => {
 
     it('clears server markdown when every stored attachment was removed', () => {
       const markdownValue = '[old.pdf](https://files.example.com/old)';
-      const serverField = createFileField({ markdownValue });
+      const serverField = createFileField({
+        markdownValue,
+        default: '[default.pdf](https://files.example.com/default)',
+      });
       const storageField = createFileField({
         markdownValue,
         attachments: [
@@ -185,6 +188,14 @@ describe('ExtraFieldsHelper', () => {
       expect(result[0].attachments).toEqual([]);
       expect(result[0].value).toEqual([]);
       expect(result[0].markdownValue).toBe('');
+    });
+
+    it('initialises attachments and the submitted value from a Markdown default', () => {
+      const defaultValue = '[doc.pdf](https://files.example.com/abc-123)';
+      const [result] = new ExtraFieldsHelper([createFileField({ default: defaultValue })]).getFieldsWithValues();
+
+      expect(result.attachments).toEqual([expect.objectContaining({ id: 'abc-123' })]);
+      expect(result.value).toEqual([defaultValue]);
     });
 
     it('uses server attachments when markdownValue is absent', () => {
@@ -240,7 +251,32 @@ describe('ExtraFieldsHelper', () => {
   });
 
   describe('getFieldsWithValues — non-File types (sanity checks)', () => {
-    it('processes text field with default value', () => {
+    it.each([
+      [undefined, undefined, '10'],
+      ['', undefined, '10'],
+      [null, undefined, '10'],
+      [0, undefined, 0],
+      [0, { value: 5 }, 5],
+      [0, { value: '' }, ''],
+    ])('uses a default for an unset number (%p, draft %p → %p)', (value, draft, expected) => {
+      const field: IExtraField = {
+        apiName: 'field-number',
+        name: 'Number Field',
+        type: EExtraFieldType.Number,
+        order: 1,
+        userId: null,
+        groupId: null,
+        default: '10',
+        value,
+      };
+      const storedFields = draft && [{ ...field, ...draft }];
+
+      const [result] = new ExtraFieldsHelper([field], storedFields).getFieldsWithValues();
+
+      expect(result.value).toBe(expected);
+    });
+
+    it('preserves a text value that already exists', () => {
       const field: IExtraField = {
         apiName: 'field-text',
         name: 'Text Field',
@@ -248,6 +284,7 @@ describe('ExtraFieldsHelper', () => {
         order: 1,
         userId: null,
         groupId: null,
+        default: 'initial text',
         value: 'hello',
       };
 

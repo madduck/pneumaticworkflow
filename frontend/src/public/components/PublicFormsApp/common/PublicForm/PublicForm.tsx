@@ -76,6 +76,10 @@ export function PublicForm({ type }: IPublicFormsAppProps) {
 
       const normalizedForm = produce(fetchedForm, (draftPublicForm) => {
         draftPublicForm.kickoff.fields = new ExtraFieldsHelper(fetchedForm.kickoff.fields).getFieldsWithValues();
+        draftPublicForm.kickoff.fieldsets = fetchedForm.kickoff.fieldsets.map((fieldset) => ({
+          ...fieldset,
+          fields: new ExtraFieldsHelper(fieldset.fields).getFieldsWithValues(),
+        }));
       });
 
       setPublicForm(normalizedForm);

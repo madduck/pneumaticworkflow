@@ -10,7 +10,7 @@ import { MergedOutputList } from '../../../../MergedOutputList';
 import { NotificationManager } from '../../../../UI/Notifications';
 import { makeExtraField } from '../../../../../__stubs__/fields.factory';
 import { makeFieldsetRuntime } from '../../../../../__stubs__/fieldsets.factory';
-import { IExtraField } from '../../../../../types/template';
+import { EExtraFieldType, IExtraField } from '../../../../../types/template';
 import { IFieldsetRuntime } from '../../../../../types/fieldset';
 import { intlMock } from '../../../../../__stubs__/intlMock';
 import { logger } from '../../../../../utils/logger';
@@ -21,16 +21,6 @@ jest.mock('../../../../../api/getPublicForm', () => ({
 
 jest.mock('../../../../../api/runPublicForm', () => ({
   runPublicForm: jest.fn().mockResolvedValue({ redirectUrl: null }),
-}));
-
-jest.mock('../../../../../utils/mappers', () => ({
-  getNormalizedKickoff: jest.fn((kickoff: { fields: IExtraField[] }) => {
-    const result: Record<string, string> = {};
-    for (const field of kickoff.fields) {
-      result[field.apiName] = String(field.value || '');
-    }
-    return result;
-  }),
 }));
 
 jest.mock('../../../../MergedOutputList', () => ({
@@ -279,14 +269,21 @@ describe('PublicForm', () => {
   });
 
   describe('Fieldsets: submit', () => {
-    it('sends fieldset fields merged into kickoff on submit', async () => {
+    it('sends untouched defaults from kickoff fields and fieldsets', async () => {
       (getPublicForm as jest.Mock).mockResolvedValue(
         makePublicFormResponse({
-          fields: [makeExtraField({ apiName: 'k1', value: 'kickoff-val' })],
+          fields: [makeExtraField({ apiName: 'region', default: 'Europe', isRequired: true })],
           fieldsets: [
             makeFieldsetRuntime({
-              fields: [makeExtraField({ apiName: 'fs1', value: 'fs-val', order: 1 })],
-              order: 1,
+              fields: [
+                makeExtraField({
+                  apiName: 'channels',
+                  type: EExtraFieldType.Checkbox,
+                  selections: ['Email', 'Phone'],
+                  default: 'Email, Phone',
+                  isRequired: true,
+                }),
+              ],
             }),
           ],
         }),
@@ -301,13 +298,7 @@ describe('PublicForm', () => {
         expect(runPublicForm).toHaveBeenCalledTimes(1);
       });
 
-      expect(runPublicForm).toHaveBeenCalledWith(
-        '',
-        expect.objectContaining({
-          k1: 'kickoff-val',
-          fs1: 'fs-val',
-        }),
-      );
+      expect(runPublicForm).toHaveBeenCalledWith('', { region: 'Europe', channels: ['Email', 'Phone'] });
     });
   });
 

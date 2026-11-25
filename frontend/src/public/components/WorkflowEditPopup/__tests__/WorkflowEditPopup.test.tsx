@@ -5,7 +5,8 @@ import { IntlProvider } from 'react-intl';
 import { enMessages } from '../../../lang/locales/en_US';
 
 import { WorkflowEditPopup } from '../WorkflowEditPopup';
-import { IExtraField } from '../../../types/template';
+import { EExtraFieldType, IExtraField } from '../../../types/template';
+import { getNormalizedKickoff } from '../../../utils/mappers';
 import { IFieldsetRuntime } from '../../../types/fieldset';
 import { makeExtraField } from '../../../__stubs__/fields.factory';
 import { makeFieldsetRuntime } from '../../../__stubs__/fieldsets.factory';
@@ -243,6 +244,56 @@ describe('WorkflowEditPopup', () => {
       expect.objectContaining({ showInsertButton: false }),
       {},
     );
+  });
+
+  it('submits untouched defaults and keeps edits and clears made by the user', () => {
+    const workflow = {
+      ...baseWorkflow,
+      kickoff: {
+        ...baseWorkflow.kickoff,
+        fields: [
+          makeField({ apiName: 'region', default: 'Europe', isRequired: true }),
+          makeField({ apiName: 'priority', default: 'Normal', isHidden: true }),
+          makeField({ apiName: 'title', default: 'Initial title' }),
+          makeField({ apiName: 'notes', default: 'Initial notes' }),
+        ],
+      },
+      loadedFieldsets: [
+        makeFieldset({
+          fields: [
+            makeField({
+              apiName: 'channels',
+              type: EExtraFieldType.Checkbox,
+              selections: ['Email', 'Phone'],
+              value: 'Email, Phone',
+              isRequired: true,
+            }),
+          ],
+        }),
+      ],
+    };
+
+    renderWithIntl(<WorkflowEditPopup {...baseProps} workflow={workflow} />);
+
+    const [{ onEditField }] = (MergedOutputList as jest.Mock).mock.calls[0];
+    act(() => {
+      onEditField('title')({ value: 'New title' });
+      onEditField('notes')({ value: '' });
+    });
+
+    const startButton = screen.getByRole('button', { name: START_LABEL });
+    expect(startButton).toBeEnabled();
+    userEvent.click(startButton);
+
+    expect(baseProps.onRunWorkflow).toHaveBeenCalledTimes(1);
+    const [{ kickoff }] = baseProps.onRunWorkflow.mock.calls[0];
+    expect(getNormalizedKickoff(kickoff)).toEqual({
+      region: 'Europe',
+      priority: 'Normal',
+      title: 'New title',
+      notes: '',
+      channels: ['Email', 'Phone'],
+    });
   });
 
   describe('Fieldsets: merge and validation', () => {
