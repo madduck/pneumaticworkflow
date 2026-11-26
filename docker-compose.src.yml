@@ -97,6 +97,7 @@ services:
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-rabbitmq_password}
     networks:
       - pneumatic
+    restart: always
 
   backend:
     build:
@@ -678,6 +679,7 @@ services:
       - ./seaweedfs/master/data:/data:rw
     networks:
       - pneumatic
+    restart: always
 
   seaweedfs-volume:
     image: chrislusf/seaweedfs:3.95
@@ -700,6 +702,7 @@ services:
       - ./seaweedfs/volume/data:/data:rw
     networks:
       - pneumatic
+    restart: always
 
   seaweedfs-filer:
     image: chrislusf/seaweedfs:3.95
@@ -722,6 +725,7 @@ services:
       - ./seaweedfs/filer/data:/data:rw
     networks:
       - pneumatic
+    restart: always
 
   # The collector of the audit journal. Off by default: it starts only
   # with the profile named after LOGS_BACKEND, which start.sh passes on
