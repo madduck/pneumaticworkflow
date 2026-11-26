@@ -95,6 +95,7 @@ export const enMessages = {
   'user.sign-in-sso': 'SSO',
   'user.sign-up-google': 'Google',
   'user.sign-in-google': 'Google',
+  'user.oidc-sign-in-failed': 'Single sign-on failed. Try again or contact your workspace administrator.',
   'user.oauth-unavailable':
     '{type} sign-in is temporarily unavailable. Please try again later or log in using your email.',
   'user.id': 'ID',

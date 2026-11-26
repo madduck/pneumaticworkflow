@@ -90,6 +90,7 @@ export const ruMessages = {
   'user.sign-up-google': 'Google',
   'user.sign-in-google': 'Google',
   'user.sign-up-sso': 'SSO',
+  'user.oidc-sign-in-failed': 'Не удалось войти через SSO. Попробуйте снова или обратитесь к администратору.',
   'user.oauth-unavailable':
     'Вход через {type} временно недоступен. Пожалуйста, попробуйте позже или войдите с помощью электронной почты.',
   'user.id': 'ID',

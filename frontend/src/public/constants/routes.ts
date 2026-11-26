@@ -17,6 +17,8 @@ export enum ERoutes {
   OAuthMicrosoft = '/oauth/microsoft/',
   OAuthSSOAuth0 = '/oauth/auth0/',
   OAuthSSOOkta = '/oauth/okta/',
+  OAuthOIDC = '/oauth/oidc/',
+  OAuthOIDCCallback = '/oauth/oidc/callback/',
 
   CollectPaymentDetails = '/collect-payment-details',
   AfterPaymentDetailsProvided = '/after-payment-details-provided',

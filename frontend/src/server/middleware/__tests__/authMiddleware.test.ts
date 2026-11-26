@@ -49,6 +49,53 @@ describe('middleware', () => {
 
       expect(res.redirect).toHaveBeenCalledWith(`${ERoutes.Login}?redirectUrl=%2Fdashboard%2F`);
     });
+    describe('OIDC auto-login', () => {
+      const savedEnv = process.env;
+
+      beforeEach(() => {
+        process.env = { ...savedEnv, SSO_AUTH: 'yes', SSO_PROVIDER: 'oidc', OIDC_AUTO_LOGIN: 'yes' };
+      });
+
+      afterEach(() => {
+        process.env = savedEnv;
+      });
+
+      it('sends an unsigned browser directly to OIDC with the requested page', async () => {
+        await authMiddleware({ ...req, url: '/workflows/?type=running' }, res, next);
+
+        expect(res.redirect).toHaveBeenCalledWith(`${ERoutes.OAuthOIDC}?return_to=%2Fworkflows%2F%3Ftype%3Drunning`);
+        expect(next).not.toHaveBeenCalled();
+      });
+
+      it('redirects the login page to OIDC', async () => {
+        await authMiddleware({ ...req, url: ERoutes.Login, query: {} }, res, next);
+
+        expect(res.redirect).toHaveBeenCalledWith(ERoutes.OAuthOIDC);
+      });
+
+      it('keeps the local recovery page reachable', async () => {
+        await authMiddleware({ ...req, url: `${ERoutes.Login}?local=1`, query: { local: '1' } }, res, next);
+
+        expect(next).toHaveBeenCalled();
+        expect(res.redirect).not.toHaveBeenCalled();
+      });
+
+      it('keeps manual sign-in when auto-login is off', async () => {
+        process.env.OIDC_AUTO_LOGIN = 'no';
+        await authMiddleware({ ...req, url: ERoutes.Login, query: {} }, res, next);
+
+        expect(next).toHaveBeenCalled();
+        expect(res.redirect).not.toHaveBeenCalled();
+      });
+
+      it('does not redirect to OIDC for another SSO provider', async () => {
+        process.env.SSO_PROVIDER = 'okta';
+        await authMiddleware({ ...req, url: ERoutes.Login, query: {} }, res, next);
+
+        expect(next).toHaveBeenCalled();
+        expect(res.redirect).not.toHaveBeenCalled();
+      });
+    });
     it('redirects already signed account owner to the Dashboard', async () => {
       const mockUser = { is_account_owner: true, account: { is_subscribed: true } } as IAuthenticatedUser;
       (getUser as jest.Mock).mockReturnValue(mockUser);

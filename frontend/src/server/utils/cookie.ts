@@ -13,11 +13,12 @@ export interface ITokens {
   token: string;
 }
 
-export function setAuthCookie(req: Request, res: Response, { token }: ITokens) {
+export function setAuthCookie(req: Request, res: Response, { token }: ITokens, requireHTTPS = false) {
   const isHTTPS = req.protocol === 'https';
 
   res.cookie('token', token, {
     ...(isHTTPS && COOKIE_OPTIONS),
+    ...(requireHTTPS && { maxAge: COOKIE_MAX_AGE, secure: true, sameSite: 'lax' }),
     domain: req.hostname,
   });
 }

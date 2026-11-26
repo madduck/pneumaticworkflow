@@ -1,10 +1,23 @@
 import type { MouseEvent } from 'react';
 import type { IntlShape } from 'react-intl';
 
-import type { EOAuthType } from '../../../types/auth';
+import { EOAuthType } from '../../../types/auth';
+import { ERoutes } from '../../../constants/routes';
+import { SSOProvider } from '../../../../server/types';
 import { getOAuthUrl } from '../../../api/getGoogleAuthUrl';
 import { NotificationManager } from '../../../components/UI/Notifications';
 import { isValidUri } from '../../../utils/urls';
+
+export function handleSSOClick(provider: string | undefined, formatMessage: IntlShape['formatMessage']) {
+  if (provider === 'oidc') {
+    return (event: MouseEvent) => {
+      event.preventDefault();
+      const returnTo = new URLSearchParams(window.location.search).get('redirectUrl');
+      window.location.assign(`${ERoutes.OAuthOIDC}${returnTo ? `?return_to=${encodeURIComponent(returnTo)}` : ''}`);
+    };
+  }
+  return handleOAuthClick(provider === SSOProvider.Auth0 ? EOAuthType.SSOAuth0 : EOAuthType.SSOOkta, formatMessage);
+}
 
 export const handleOAuthClick =
   (type: EOAuthType, formatMessage: IntlShape['formatMessage']) => async (event: MouseEvent) => {

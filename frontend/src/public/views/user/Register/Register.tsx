@@ -20,7 +20,7 @@ import { getBrowserConfigEnv } from '../../../utils/getConfig';
 import { logger } from '../../../utils/logger';
 import { setLandingTemplate } from '../../../utils/landingTemplate';
 import { setTemplateName } from './utils/templateName';
-import { handleOAuthClick } from '../utils/handleOAuthClick';
+import { handleOAuthClick, handleSSOClick } from '../utils/handleOAuthClick';
 import { Button, Header, InputField } from '../../../components/UI';
 import { GoogleButton, MicrosoftButton, SSOButton } from '../../../components/OAuthButtons';
 import { getErrorsObject } from '../../../utils/formik/getErrorsObject';
@@ -33,7 +33,6 @@ import {
   isEnvSSOAuth,
 } from '../../../constants/enviroment';
 import { TIMEZONE_OFFSET_MAP } from '../../../constants/profile';
-import { SSOProvider } from '../../../../server/types';
 
 import styles from '../User.css';
 import 'react-phone-number-input/style.css';
@@ -52,7 +51,6 @@ export function Register({ registerUser }: IRegisterProps) {
   const { recaptchaSecret } = getBrowserConfigEnv();
   const [showCaptcha, setShowCaptcha] = useState(false);
   const defaultOffset = moment().utcOffset();
-  const typeSSOProvider = envSSOProvider === SSOProvider.Auth0 ? EOAuthType.SSOAuth0 : EOAuthType.SSOOkta;
 
   useEffect(() => {
     document.title = TITLES.Register;
@@ -129,7 +127,7 @@ export function Register({ registerUser }: IRegisterProps) {
         {isEnvSSOAuth && (
           <SSOButton
             label={formatMessage({ id: 'user.sign-up-sso' })}
-            onClick={handleOAuthClick(typeSSOProvider, formatMessage)}
+            onClick={handleSSOClick(envSSOProvider, formatMessage)}
             className={styles['oauth__button']}
           />
         )}
