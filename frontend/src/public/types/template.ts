@@ -253,6 +253,7 @@ export interface IExtraField {
   isHidden?: boolean;
   name: string;
   type: EExtraFieldType;
+  default?: string;
   value?: TExtraFieldValue;
   selections?: IExtraFieldSelection[] | string[];
   dataset?: number | null;

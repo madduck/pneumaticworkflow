@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { IntlProvider } from 'react-intl';
 
@@ -53,6 +53,47 @@ describe('ExtraFieldDropdown', () => {
       renderWithIntl(<ExtraFieldDropdown {...baseProps} isHidden={false} />);
 
       expect(getHiddenSwitch()).toBeInTheDocument();
+    });
+  });
+
+  describe('Default value', () => {
+    it('shows an empty editor for a field without a default', () => {
+      renderWithIntl(<ExtraFieldDropdown {...baseProps} />);
+
+      userEvent.click(screen.getByRole('button', { name: 'Field options' }));
+      expect(screen.getByRole('textbox', { name: 'Default value' })).toHaveValue('');
+    });
+
+    it('shows, clears and edits a saved multiline default in the menu', async () => {
+      const onEditField = jest.fn();
+      const FieldMenu = () => {
+        const [defaultValue, setDefaultValue] = React.useState('First line\nSecond line');
+        return (
+          <ExtraFieldDropdown
+            {...baseProps}
+            defaultValue={defaultValue}
+            onEditField={(changes) => {
+              onEditField(changes);
+              setDefaultValue(changes.default ?? '');
+            }}
+          />
+        );
+      };
+      renderWithIntl(<FieldMenu />);
+
+      const toggle = screen.getByRole('button', { name: 'Field options' });
+      userEvent.click(toggle);
+      const input = screen.getByRole('textbox', { name: 'Default value' });
+      expect(input).toHaveValue('First line\nSecond line');
+
+      await waitFor(() => expect(screen.getByRole('menu')).not.toHaveStyle({ pointerEvents: 'none' }));
+      userEvent.clear(input);
+      expect(onEditField).toHaveBeenLastCalledWith({ default: '' });
+
+      userEvent.type(input, 'New value{enter}Next line');
+      expect(onEditField).toHaveBeenLastCalledWith({ default: 'New value\nNext line' });
+      expect(toggle).toHaveAttribute('aria-expanded', 'true');
+      expect(input).toHaveValue('New value\nNext line');
     });
   });
 

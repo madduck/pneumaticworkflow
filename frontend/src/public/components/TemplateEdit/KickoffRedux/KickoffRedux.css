@@ -423,6 +423,10 @@
     border-radius: 0.8rem;
   }
 
+  .dropdown-default-value {
+    padding: 0.5rem 1.6rem;
+  }
+
   .dropdown-item {
     display: flex !important;
     align-items: center;

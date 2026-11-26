@@ -663,6 +663,8 @@ export const ruMessages = {
   'template.active-if-template-enabled': 'Ссылка будет активной только если шаблон включен',
   'template.kick-off-add-options': 'Добавить опции',
   'template.datasets': 'Набор данных',
+  'template.field-options': 'Параметры поля',
+  'template.field-default-value': 'Значение по умолчанию',
   'template.field-datasets-menu': 'Наборы данных',
   'template.field-dataset-clear': 'Очистить набор данных',
   'template.kick-off-form-delete-component': 'Удалить',

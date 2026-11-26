@@ -18,6 +18,7 @@ import {
 } from '../template';
 import { EConditionAction, EConditionOperators, EConditionLogicOperations } from '../../types/templateTaskConditions';
 import type { TConditionRule } from '../../types/templateTaskConditions';
+import { getEditedFields } from '../../components/TemplateEdit/ExtraFields/utils/getEditedFields';
 import { makeExtraField } from '../../__stubs__/fields.factory';
 import { makeFieldsetBinding, makeFieldsetBindingClient, makeFieldsetField } from '../../__stubs__/fieldsets.factory';
 
@@ -372,6 +373,24 @@ describe('template utilities', () => {
   });
 
   describe('mapTemplateRequest', () => {
+    it('sends edited and cleared defaults for kickoff and task fields', () => {
+      const response = createMockTemplateResponse();
+      response.kickoff.fields = [makeExtraField({ apiName: 'kickoff-field', default: 'Old default' })];
+      response.tasks[0].fields = [makeExtraField({ apiName: 'task-field', default: 'Another default' })];
+      const template = getNormalizedTemplate(response, true, [], ESubscriptionPlan.Premium);
+
+      expect(template.kickoff.fields[0].default).toBe('Old default');
+      expect(template.tasks[0].fields[0].default).toBe('Another default');
+
+      template.kickoff.fields = getEditedFields(template.kickoff.fields, 'kickoff-field', { default: 'New default' });
+      template.tasks[0].fields = getEditedFields(template.tasks[0].fields, 'task-field', { default: '' });
+
+      const request = mapTemplateRequest(template);
+
+      expect(request.kickoff.fields[0].default).toBe('New default');
+      expect(request.tasks[0].fields[0].default).toBe('');
+    });
+
     it('maps template with owners of different roles', () => {
       const owners = [
         {

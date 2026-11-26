@@ -165,6 +165,7 @@ function ExtraField(props: IExtraFieldProps) {
             isFirstItem={isFirstItem}
             isLastItem={isLastItem}
             apiName={apiName}
+            defaultValue={field.default}
             isRequired={isRequired}
             isRequiredDisabled={getIsRequiredDisabled()}
             isHidden={isHidden}

@@ -66,6 +66,13 @@ describe('ExtraField', () => {
     jest.clearAllMocks();
   });
 
+  it('passes the saved default, not the runtime value, to the field menu', () => {
+    const field = { ...baseField, default: 'Saved default', value: 'Workflow value' };
+    renderWithIntl(<ExtraFieldIntl {...baseProps} field={field} />);
+
+    expect(ExtraFieldDropdown).toHaveBeenCalledWith(expect.objectContaining({ defaultValue: 'Saved default' }), {});
+  });
+
   describe('Passing isHidden to ExtraFieldDropdown', () => {
     it('passes isHidden=true to ExtraFieldDropdown', () => {
       renderWithIntl(<ExtraFieldIntl {...baseProps} field={{ ...baseField, isHidden: true }} />);
