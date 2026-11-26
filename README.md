@@ -1,8 +1,39 @@
 [![Documentation](https://img.shields.io/badge/docs-support.pneumatic.app-blue)](https://support.pneumatic.app/en/)
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 
+# What’s new in `int` compared with `master`
 
+The `int` branch (this repo) integrates a number of changes we've been making to
+Pneumatic. Its future is unclear, while
+[upstream remains unresponsive](https://github.com/pneumaticapp/pneumaticworkflow/discussions/342).
 
+The following changes, tracked on separate branches, are integrated:
+
+- Single sign-on: Self-hosted workspaces can use Authentik or another OpenID
+  Connect (OIDC) provider. Pneumatic can sync group membership and admin rights
+  at sign-in. Automatic sign-in and account creation are optional. See the
+  [Authentik setup guide](docs/authentik-oidc.md) for configuration and recovery
+  steps.
+- Workflow dates and times: Workflow fields and conditions accept a date and
+  time in the browser’s time zone. Pneumatic saves the exact time and shows it
+  in workflow tables and Excel exports. The date picker uses a preset time when
+  one is configured and you pick a day in an empty field.
+- Template defaults: Use the Field options menu to view, edit or clear default
+  values for workflow start and task fields. The editor accepts multiline
+  values.
+- Desktop sidebar: The company name replaces the plan badge. You can pin the
+  sidebar open, and your browser remembers your choice.
+- Self-hosted startup: When you select “From sources”, `start.sh` rebuilds the
+  images and shows Docker Compose output as it runs. The source stack waits for
+  services to be ready before it starts the services that depend on them. This
+  includes the SeaweedFS file storage components. Other fixes cover startup
+  commands in both Compose files, PostgreSQL setup for the file service, and how
+  PM2 starts the frontend.
+- Backend fixes: Pneumatic refreshes workflow owners only after it saves group
+  membership changes. Two database migrations now preserve the regular
+  expressions used to prepare text for search.
+
+-----
 
 <img width="1000" alt="Heading" src="https://github.com/user-attachments/assets/57e9d9df-24bf-42fe-a843-6f9c9b00bfac">
 
@@ -14,7 +45,6 @@
 **Pneumatic** is an open-source SaaS workflow management system designed to streamline and organize workflows in businesses of any size. Originally developed as a cloud-based platform, Pneumatic empowers teams by enabling them to set up, run, and optimize workflows collaboratively, tracking each stage as tasks move from team to team.
 
 [:tv: Product Overview (< 5 min)](https://www.youtube.com/watch?v=GC67ocuOFfE)
-
 
 ## Key Features
 
