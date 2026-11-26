@@ -18,9 +18,10 @@ The following changes, tracked on separate branches, are integrated:
   time in the browser’s time zone. Pneumatic saves the exact time and shows it
   in workflow tables and Excel exports. The date picker uses a preset time when
   one is configured and you pick a day in an empty field.
-- Template defaults: Use the Field options menu to view, edit or clear default
-  values for workflow start and task fields. The editor accepts multiline
-  values.
+- Template defaults: Use the Field options menu to view, edit or clear multiline
+  defaults for workflow start and task fields. Public forms and the Start
+  Workflow dialog submit untouched defaults, including for hidden fields and
+  fields inside groups.
 - Desktop sidebar: The company name replaces the plan badge. You can pin the
   sidebar open, and your browser remembers your choice.
 - Self-hosted startup: When you select “From sources”, `start.sh` rebuilds the

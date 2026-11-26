@@ -14,6 +14,7 @@ import { EInputNameBackgroundColor } from '../../types/workflow';
 import type { IExtraField } from '../../types/template';
 import type { IFieldsetRuntime } from '../../types/fieldset';
 import { getPluralNoun, isArrayWithItems } from '../../utils/helpers';
+import { ExtraFieldsHelper } from '../TemplateEdit/ExtraFields/utils/ExtraFieldsHelper';
 import { getEditedFields } from '../TemplateEdit/ExtraFields/utils/getEditedFields';
 import { MergedOutputList } from '../MergedOutputList';
 
@@ -71,8 +72,13 @@ function WorkflowEditPopupComponent({
   const [workflowName, changeWorkflowName] = useState(
     workflow.wfNameTemplate || `${reactElementToText(<DateFormat />)} — ${workflow.name}`,
   );
-  const [kickoffState, setKickoffState] = useState(getInitialKickoff(workflow.kickoff));
-  const [fieldsetStates, setFieldsetStates] = useState<IFieldsetRuntime[]>(workflow.loadedFieldsets || []);
+  const [kickoffState, setKickoffState] = useState(() => getInitialKickoff(workflow.kickoff));
+  const [fieldsetStates, setFieldsetStates] = useState<IFieldsetRuntime[]>(() =>
+    (workflow.loadedFieldsets || []).map((fieldset) => ({
+      ...fieldset,
+      fields: new ExtraFieldsHelper(fieldset.fields).getFieldsWithValues(),
+    })),
+  );
 
   const [isUrgent, setIsUrgent] = useState(false);
 
