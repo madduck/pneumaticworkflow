@@ -30,6 +30,7 @@ class TaskField(
     class Meta:
         ordering = ['-order', 'id']
 
+    template_default = models.TextField(blank=True, default='')
     value = models.TextField(
         blank=True,
         help_text='Human readable value',

@@ -1,3 +1,4 @@
+import logging
 import re
 from decimal import Decimal, DecimalException
 from typing import Any, List, NamedTuple, Optional, Set
@@ -36,6 +37,7 @@ from src.utils.dates import date_tsp_to_user_fmt
 
 
 UserModel = get_user_model()
+logger = logging.getLogger(__name__)
 
 
 class FieldData(NamedTuple):
@@ -162,10 +164,16 @@ class TaskFieldService(BaseWorkflowService):
                 message=messages.MSG_PW_0032,
             )
         value = str(raw_value)
-        user_fmt_value = date_tsp_to_user_fmt(
-            date_tsp=raw_value,
-            user=self.user,
-        )
+        try:
+            user_fmt_value = date_tsp_to_user_fmt(
+                date_tsp=raw_value,
+                user=self.user,
+            )
+        except (OverflowError, OSError, ValueError) as ex:
+            raise TaskFieldException(
+                api_name=self.instance.api_name,
+                message=messages.MSG_PW_0032,
+            ) from ex
         return FieldData(
             value=value,
             markdown_value=user_fmt_value,
@@ -323,6 +331,9 @@ class TaskFieldService(BaseWorkflowService):
             is_hidden=instance_template.is_hidden,
             name=instance_template.name,
             description=instance_template.description,
+            template_default=(
+                instance_template.default if kwargs.get('skip_value') else ''
+            ),
             api_name=instance_template.api_name,
             order=instance_template.order,
             workflow_id=kwargs['workflow_id'],
@@ -500,6 +511,49 @@ class TaskFieldService(BaseWorkflowService):
             if created:
                 service = AttachmentService(user=self.user)
                 service.assign_permissions(attachment)
+
+    def apply_template_default(self) -> None:
+        """Set a field's saved default through normal output validation.
+
+        Leave the field empty if the saved default is invalid.
+        """
+        default = self.instance.template_default
+        value: str | float | list[str] = default
+        try:
+            if self.instance.type == FieldType.DATE:
+                try:
+                    value = float(default)
+                except ValueError as ex:
+                    raise TaskFieldException(
+                        api_name=self.instance.api_name,
+                        message=messages.MSG_PW_0032,
+                    ) from ex
+            elif self.instance.type == FieldType.NUMBER:
+                value = default.replace(',', '.')
+            elif self.instance.type == FieldType.CHECKBOX:
+                value = [
+                    part for item in default.split(',')
+                    if (part := item.strip())
+                ]
+            elif self.instance.type == FieldType.FILE:
+                value = [
+                    f'[{name}]({url.strip()})'
+                    for name, url in re.findall(
+                        r'\[([^\]]+)\]\(([^)"]+)(?:\s+"[^"]*")?\)',
+                        default,
+                    )
+                ]
+                if not value:
+                    raise TaskFieldException(
+                        api_name=self.instance.api_name,
+                        message=messages.MSG_PW_0036,
+                    )
+            self.partial_update(value=value)
+        except TaskFieldException:
+            logger.warning(
+                'Ignoring invalid template default for task field %s',
+                self.instance.id,
+            )
 
     def partial_update(
         self,

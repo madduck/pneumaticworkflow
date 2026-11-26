@@ -597,13 +597,16 @@ class WorkflowActionService:
             instance=task,
             user=self.user,
         )
-        task_service.partial_update(
-            is_urgent=self.workflow.is_urgent,
-            date_completed=None,
-            status=TaskStatus.ACTIVE,
-            date_started=timezone.now(),
-            force_save=True,
-        )
+        with transaction.atomic():
+            if task.date_first_started is None:
+                task_service.apply_output_defaults()
+            task_service.partial_update(
+                is_urgent=self.workflow.is_urgent,
+                date_completed=None,
+                status=TaskStatus.ACTIVE,
+                date_started=timezone.now(),
+                force_save=True,
+            )
         task_service.set_due_date_from_template()
         performers_qst = (
             TaskPerformer.objects

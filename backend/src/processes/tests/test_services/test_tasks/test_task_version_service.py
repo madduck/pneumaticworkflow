@@ -1870,6 +1870,7 @@ def test__update_field__fieldset_none__ok():
         'type': FieldType.STRING,
         'is_required': False,
         'is_hidden': False,
+        'default': 'Template value',
         'order': 1,
         'dataset_id': None,
     }
@@ -1885,6 +1886,8 @@ def test__update_field__fieldset_none__ok():
     assert field.type == FieldType.STRING
     assert field.is_required is False
     assert field.is_hidden is False
+    assert field.template_default == 'Template value'
+    assert field.value == ''
     assert field.order == 1
     assert field.fieldset is None
     assert field.task == task
@@ -1984,6 +1987,7 @@ def test__update_field__fieldset_existing_runtime_field__preserves_values():
         'type': FieldType.STRING,
         'is_required': True,
         'is_hidden': False,
+        'default': 'Updated default',
         'order': 2,
         'dataset_id': None,
     }
@@ -1996,6 +2000,7 @@ def test__update_field__fieldset_existing_runtime_field__preserves_values():
 
     # assert
     assert created is False
+    assert field.template_default == 'Updated default'
     assert field.id == existing_field.id
     assert field.fieldset == fieldset
     assert field.task == task
