@@ -4,6 +4,7 @@ import type { IExtraField } from '../../../../types/template';
 import { EExtraFieldMode, EExtraFieldType } from '../../../../types/template';
 import { isArrayWithItems } from '../../../../utils/helpers';
 import { numberRegex } from '../../../../constants/defaultValues';
+import { fromUnixSeconds } from '../../../../utils/dateTime';
 
 export const getFieldValidator = (field: IExtraField, mode: EExtraFieldMode) => {
   const shouldValidate = mode === EExtraFieldMode.ProcessRun;
@@ -90,7 +91,11 @@ function getUrlValidateRules({ isRequired }: IExtraField) {
 }
 
 function getDateValidateRules({ isRequired }: IExtraField) {
-  return [isRequired ? KICKOFF_SIMPLE_FIELD_RULE : EMPTY_RULE];
+  return [
+    isRequired
+      ? { ...KICKOFF_SIMPLE_FIELD_RULE, isInvalid: (value: unknown) => fromUnixSeconds(value) === null }
+      : EMPTY_RULE,
+  ];
 }
 
 function getCheckboxValidateRules({ isRequired }: IExtraField) {

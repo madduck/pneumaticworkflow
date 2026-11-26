@@ -16,7 +16,6 @@ import { mapWsEnvelopeToWorkflowLogItem } from './mapWorkflowLogEventFromWs';
 import { mapNotificationCreatedDataToListItem } from './mapNotificationFromWs';
 import { prependNotificationItem } from './prependNotificationItem';
 import { logger } from '../../../utils/logger';
-import { getUserTimezone } from '../../selectors/user';
 import { updateWorkflowLogItem } from '../../workflows/slice';
 import { isWorkflowEndedEventType } from './isWorkflowEndedEventType';
 import { mapBackendNewEventToRedux } from '../../../utils/mappers';
@@ -83,10 +82,9 @@ export function* routeRealtimeEvent(envelope: TRealtimeWsEnvelope) {
         break;
       }
 
-      const timezone: ReturnType<typeof getUserTimezone> = yield select(getUserTimezone);
       const { data }: IStoreTask = yield select(getTaskStore);
       const { workflow }: IStoreWorkflows = yield select(getWorkflowsStore);
-      const formatted = mapBackendNewEventToRedux(logItem, timezone);
+      const formatted = mapBackendNewEventToRedux(logItem);
 
       if (logItem.workflowId === data?.workflow.id || logItem.workflowId === workflow?.id) {
         yield put(updateWorkflowLogItem(formatted));

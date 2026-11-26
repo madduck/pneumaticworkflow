@@ -23,6 +23,10 @@ type TSharedRangeProps = Omit<TRangeLibraryProps, TOmittedLibraryProps>;
 export interface ISingleDatePickerProps extends TSharedSingleProps {
   selectsRange?: false;
   startDay?: true;
+  /** Select a time in the browser timezone instead of a day in the account timezone. */
+  withTime?: boolean;
+  /** Local hours (0–23) and minutes (0–59) to use when you pick a day in an empty datetime field. */
+  defaultTime?: { hours: number; minutes: number };
   selected?: Date | null;
   /** When false, parent owns clear UI (e.g. trailing DateIcon slot). Default true. */
   isClearable?: boolean;

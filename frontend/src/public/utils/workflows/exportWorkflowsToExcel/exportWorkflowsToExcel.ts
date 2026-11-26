@@ -4,7 +4,7 @@ import type { TUserListItem } from '../../../types/user';
 import type { IGroup } from '../../../types/team';
 import { getUserFullName, EXTERNAL_USER } from '../../users';
 import { getUserById } from '../../../components/UserData/utils/getUserById';
-import { toDateString } from '../../dateTime';
+import { formatWorkflowFieldDateTime } from '../../dateTime';
 import { getWorkflowProgress } from '../../../components/Workflows/utils/getWorkflowProgress';
 import { ALL_SYSTEM_FIELD_NAMES } from '../../../components/Workflows/WorkflowsTablePage/WorkflowsTable/constants';
 import { downloadBlobInBrowser } from '../downloadBlobInBrowser';
@@ -43,7 +43,6 @@ function getPerformersDisplayName(
 
 function getOptionalFieldValue(
   field: ITableViewFields | undefined,
-  timezone?: string,
   users?: TUserListItem[],
   groups?: IGroup[],
 ): string {
@@ -52,7 +51,7 @@ function getOptionalFieldValue(
     case EExtraFieldType.Text:
       return field.clearValue ?? String(field.value ?? '');
     case EExtraFieldType.Date:
-      return field.value ? (toDateString(field.value as string, timezone) ?? '') : '';
+      return formatWorkflowFieldDateTime(field.value) ?? '';
     case EExtraFieldType.User:
       if (field.groupId && groups?.length) {
         const group = groups.find((g) => g.id === field.groupId);
@@ -82,7 +81,6 @@ export function buildWorkflowsExportRows({
   groups,
   selectedFields,
   optionalFieldsFromWorkflow,
-  timezone,
   headerLabels,
   multipleTasksLabel,
   deletedGroupFallbackTemplate,
@@ -124,7 +122,7 @@ export function buildWorkflowsExportRows({
         return systemValues[key];
       }
       const field = fieldsMap.get(key);
-      return getOptionalFieldValue(field, timezone, users, groups);
+      return getOptionalFieldValue(field, users, groups);
     });
     bodyRows.push(row);
   });

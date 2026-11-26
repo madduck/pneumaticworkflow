@@ -693,8 +693,8 @@ export const ruMessages = {
   'template.kick-off-form-url-field-tooltip-title': 'Поле URL',
   'template.kick-off-form-url-field-tooltop-text':
     'Выглядит как небольшое текстовое поле, но требует URL в качестве содержимого',
-  'template.kick-off-form-date-field-tooltip-title': 'Поле Даты',
-  'template.kick-off-form-date-field-tooltop-text': 'Пользователь выбирает дату',
+  'template.kick-off-form-date-field-tooltip-title': 'Поле даты и времени',
+  'template.kick-off-form-date-field-tooltop-text': 'Пользователь выбирает дату и время в часовом поясе браузера',
   'template.kick-off-form-attachment-field-tooltip-text':
     'Поле позволяет пользователям загружать файлы, документы или изображения',
   'template.kick-off-form-attachment-field-tooltip-title': 'Поле вложения',
@@ -1411,6 +1411,7 @@ export const ruMessages = {
   'public-form.submit-failed': 'Не удалось отправить форму',
   'superuser.edit-notification': 'Вы редактируете "{companyName}"',
   'superuser.edit-notification-exit': 'Выход',
+  'ui-date-picker.local-time': 'Местное время',
   'ui-input.clear': 'Очистить',
   'due-date.edit': 'Срок сдачи',
   'due-date.save': 'Сохранить',

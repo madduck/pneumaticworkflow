@@ -5,7 +5,8 @@ import {
   getSeconds,
   parseDuration,
   parseUnixSeconds,
-  toDateString,
+  formatWorkflowFieldDateTime,
+  fromUnixSeconds,
 } from '../dateTime';
 
 describe('dateTime', () => {
@@ -74,17 +75,19 @@ describe('dateTime', () => {
     });
   });
 
-  describe('toDateString', () => {
-    it('formats a unix timestamp number', () => {
-      expect(toDateString(1718409600, 'UTC')).toMatch(/15, 2024/);
+  describe('workflow date and time fields', () => {
+    const timestamp = new Date(2024, 6, 15, 23, 17).getTime() / 1000;
+
+    it.each([timestamp, String(timestamp)])('displays %p using the browser date and time', (value) => {
+      expect(formatWorkflowFieldDateTime(value)).toBe('Jul 15, 2024, 23:17');
     });
 
-    it('formats a unix timestamp string', () => {
-      expect(toDateString('1718409600', 'UTC')).toMatch(/15, 2024/);
+    it.each(['-1', 0, '1718409600.5'])('reads the exact stored instant %p', (value) => {
+      expect(fromUnixSeconds(value)?.getTime()).toBe(Number(value) * 1000);
     });
 
-    it('returns null for invalid values instead of throwing', () => {
-      expect(toDateString('not-a-date', 'UTC')).toBeNull();
+    it.each(['', 'not-a-date', null])('returns null for empty and invalid values: %p', (value) => {
+      expect(formatWorkflowFieldDateTime(value)).toBeNull();
     });
   });
 });

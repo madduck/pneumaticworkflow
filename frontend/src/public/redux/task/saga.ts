@@ -43,7 +43,7 @@ import { setGeneralLoaderVisibility } from '../general/actions';
 import { patchTaskInList, shiftTaskList, ETaskListActions } from '../tasks/slice';
 
 import { getErrorMessage } from '../../utils/getErrorMessage';
-import { getAuthUser, getUsers, getUserTimezone } from '../selectors/user';
+import { getAuthUser, getUsers } from '../selectors/user';
 import {
   fieldsetsStorage,
   removeOutputFromLocalStorage,
@@ -70,7 +70,6 @@ import { changeTaskDueDate } from '../../api/changeTaskDueDate';
 import {
   mapBackandworkflowLogToRedux,
   formatTaskDatesForRedux,
-  mapBackendWorkflowToRedux,
   mapOutputToCompleteTask,
   getNormalizeOutputUsersToEmails,
 } from '../../utils/mappers';
@@ -94,7 +93,6 @@ function* fetchTask({ payload: { taskId, viewMode } }: TLoadCurrentTask) {
     workflowLog: { sorting, isCommentsShown, isOnlyAttachmentsShown },
   }: IStoreTask = yield select(getTaskStore);
   const prevTask: ReturnType<typeof getCurrentTask> = yield select(getCurrentTask);
-  const timezone: ReturnType<typeof getUserTimezone> = yield select(getUserTimezone);
   yield put(setCurrentTask(null));
 
   try {
@@ -108,7 +106,7 @@ function* fetchTask({ payload: { taskId, viewMode } }: TLoadCurrentTask) {
 
     const task: ITaskAPI = yield getTask(taskId);
     const normalizedTask = getNormalizedTask(task);
-    const formattedTask = formatTaskDatesForRedux(normalizedTask, timezone) as ITask;
+    const formattedTask = formatTaskDatesForRedux(normalizedTask) as ITask;
 
     yield put(setCurrentTask(formattedTask));
 
@@ -166,8 +164,6 @@ function* loadTaskWorkflow(workflowId: number, taskId: number) {
     workflowLog: { isCommentsShown, sorting },
   }: IStoreTask = yield select(getTaskStore);
 
-  const timezone: ReturnType<typeof getUserTimezone> = yield select(getUserTimezone);
-
   try {
     yield put(setTaskWorkflowIsLoading(true));
 
@@ -180,11 +176,10 @@ function* loadTaskWorkflow(workflowId: number, taskId: number) {
       }),
     ]);
 
-    const formattedKickoffWorkflow = mapBackendWorkflowToRedux(workflow, timezone);
-    const formattedDueDateWorkflow = formatDateToISOInWorkflow(formattedKickoffWorkflow);
+    const formattedDueDateWorkflow = formatDateToISOInWorkflow(workflow);
     const formattedWorkflow = getWorkflowAddComputedPropsToRedux(formattedDueDateWorkflow) as IWorkflowDetailsClient;
 
-    const formattedWorkflowLog = mapBackandworkflowLogToRedux(workflowLog, timezone);
+    const formattedWorkflowLog = mapBackandworkflowLogToRedux(workflowLog);
 
     yield put(changeTaskWorkflow(formattedWorkflow));
     yield put(changeTaskWorkflowLog({ items: formattedWorkflowLog, workflowId }));
@@ -202,7 +197,6 @@ function* loadTaskWorkflowLog({
   yield put(changeTaskWorkflowLog({ isLoading: true }));
 
   try {
-    const timezone: ReturnType<typeof getUserTimezone> = yield select(getUserTimezone);
     const fetchedProcessLog: IWorkflowLogItem[] = yield getTaskWorkflowLog({
       taskId,
       sorting,
@@ -210,7 +204,7 @@ function* loadTaskWorkflowLog({
       isOnlyAttachmentsShown,
     });
 
-    const formattedFetchedProcessLog = mapBackandworkflowLogToRedux(fetchedProcessLog, timezone);
+    const formattedFetchedProcessLog = mapBackandworkflowLogToRedux(fetchedProcessLog);
 
     yield put(changeTaskWorkflowLog({ workflowId: id, items: formattedFetchedProcessLog }));
   } catch (error) {

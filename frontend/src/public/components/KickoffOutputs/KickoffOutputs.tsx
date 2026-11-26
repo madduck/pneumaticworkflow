@@ -15,6 +15,7 @@ import { UrlOutput } from './UrlOutput';
 import { FileOutput } from './FileOutput';
 import { UserOutput } from './UserOutput';
 import { isArrayWithItems } from '../../utils/helpers';
+import { formatWorkflowFieldDateTime } from '../../utils/dateTime';
 import { Attachments } from '../Attachments';
 import type { TUploadedFile } from '../../types/attachments';
 import { parseMarkdownToFiles } from '../../utils/parseMarkdownFiles';
@@ -94,11 +95,13 @@ export function KickoffOutputs({
 
   const renderSingleOutput = (output: IExtraField, key: string | number) => {
     const OutputComponent = outputsMap[output.type];
-    const value = output.type === EExtraFieldType.User ? output.userId || output.groupId : output.value;
+    const displayOutput =
+      output.type === EExtraFieldType.Date ? { ...output, value: formatWorkflowFieldDateTime(output.value) } : output;
+    const value = output.type === EExtraFieldType.User ? output.userId || output.groupId : displayOutput.value;
     const hasValue = Array.isArray(value) ? value.length > 0 : Boolean(value);
     const hasFileValue = output.type === EExtraFieldType.File && Boolean(output.markdownValue);
     const isEmpty = !(hasValue || output.attachments?.length || hasFileValue);
-    return !isEmpty ? <OutputComponent key={key} {...output} /> : null;
+    return !isEmpty ? <OutputComponent key={key} {...displayOutput} /> : null;
   };
 
   const renderFieldsetGroup = (fieldset: IFieldsetRuntime, children: React.ReactNode, key?: string) => (

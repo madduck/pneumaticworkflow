@@ -774,8 +774,8 @@ export const enMessages = {
   'template.kick-off-form-user-field-tooltop-text': 'You get to select a user from a list',
   'template.kick-off-form-url-field-tooltip-title': 'URL Field',
   'template.kick-off-form-url-field-tooltop-text': 'Looks like a small text field, but requires URL as content',
-  'template.kick-off-form-date-field-tooltip-title': 'Date Field',
-  'template.kick-off-form-date-field-tooltop-text': 'The user selects a date',
+  'template.kick-off-form-date-field-tooltip-title': 'Date and time field',
+  'template.kick-off-form-date-field-tooltop-text': 'The user selects a date and time in their browser’s time zone',
   'template.kick-off-form-attachment-field-tooltip-text': 'The field lets users upload files, documents or images',
   'template.kick-off-form-attachment-field-tooltip-title': 'Attachment Field',
   'template.kick-off-form-title': 'Kick-off Form',
@@ -1519,6 +1519,7 @@ export const enMessages = {
 
   'superuser.edit-notification': 'You are editing “{companyName}”',
   'superuser.edit-notification-exit': 'Exit',
+  'ui-date-picker.local-time': 'Local time',
   'ui-input.clear': 'Clear',
 
   'due-date.edit': 'Due Date',

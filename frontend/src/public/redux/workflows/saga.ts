@@ -140,13 +140,12 @@ import { watchedComment } from '../../api/workflows/watchedComment';
 import type { IWatchedComment } from '../../api/workflows/watchedComment';
 import {
   mapBackandworkflowLogToRedux,
-  mapBackendWorkflowToRedux,
   formatDueDateToEditWorkflow,
   mapWorkflowsToISOStringToRedux,
   mapWorkflowsAddComputedPropsToRedux,
   getNormalizeOutputUsersToEmails,
 } from '../../utils/mappers';
-import { getUserTimezone, getAuthUser, getUsers } from '../selectors/user';
+import { getAuthUser, getUsers } from '../selectors/user';
 
 import { formatDateToISOInWorkflow, toTspDate } from '../../utils/dateTime';
 import { getWorkflowAddComputedPropsToRedux } from '../../components/Workflows/utils/getWorfkflowClientProperties';
@@ -180,11 +179,9 @@ function* handleLoadWorkflow({ workflowId, showLoader = true }: { workflowId: nu
       }),
     ]);
 
-    const timezone: ReturnType<typeof getUserTimezone> = yield select(getUserTimezone);
-    const formattedWorkflowLog = mapBackandworkflowLogToRedux(workflowLog, timezone);
+    const formattedWorkflowLog = mapBackandworkflowLogToRedux(workflowLog);
 
-    const formattedKickoffWorkflow = mapBackendWorkflowToRedux(workflow, timezone);
-    const formattedDueDateWorkflow = formatDateToISOInWorkflow(formattedKickoffWorkflow);
+    const formattedDueDateWorkflow = formatDateToISOInWorkflow(workflow);
     const formattedWorkflow = getWorkflowAddComputedPropsToRedux(formattedDueDateWorkflow) as IWorkflowDetailsClient;
 
     yield put(changeWorkflow(formattedWorkflow));
@@ -244,14 +241,13 @@ function* fetchWorkflowLog({
   yield put(changeWorkflowLog({ isLoading: true }));
 
   try {
-    const timezone: ReturnType<typeof getUserTimezone> = yield select(getUserTimezone);
     const fetchedProcessLog: IWorkflowLogItem[] = yield getWorkflowLog({
       workflowId: id,
       sorting,
       comments,
       isOnlyAttachmentsShown,
     });
-    const formattedFetchedProcessLog = mapBackandworkflowLogToRedux(fetchedProcessLog, timezone);
+    const formattedFetchedProcessLog = mapBackandworkflowLogToRedux(fetchedProcessLog);
 
     yield put(changeWorkflowLog({ workflowId: id, items: formattedFetchedProcessLog }));
   } catch (error) {

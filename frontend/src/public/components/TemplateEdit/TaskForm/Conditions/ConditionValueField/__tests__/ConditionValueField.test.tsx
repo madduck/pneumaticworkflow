@@ -1,6 +1,6 @@
 /// <reference types="jest" />
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { IntlProvider } from 'react-intl';
 
 import { enMessages } from '../../../../../../lang/locales/en_US';
@@ -30,8 +30,23 @@ jest.mock('../../utils/useLazyDataset', () => ({
 }));
 
 jest.mock('../../../../../UI/form/DatePicker', () => ({
-  DatePickerCustom: ({ selected }: { selected: Date | null }) => (
-    <span data-testid="condition-date-picker">{selected ? 'has-date' : 'empty'}</span>
+  DatePickerCustom: ({
+    selected,
+    withTime,
+    onChange,
+  }: {
+    selected: Date | null;
+    withTime: boolean;
+    onChange(date: Date): void;
+  }) => (
+    <button
+      type="button"
+      data-testid="condition-date-picker"
+      data-with-time={withTime}
+      onClick={() => onChange(new Date(0))}
+    >
+      {selected ? 'has-date' : 'empty'}
+    </button>
   ),
 }));
 
@@ -130,6 +145,16 @@ describe('ConditionValueField date field', () => {
     );
 
     expect(screen.getByTestId('condition-date-picker')).toHaveTextContent('empty');
+  });
+
+  it('compares date fields to an exact instant', () => {
+    const changeRuleValue = jest.fn();
+    renderValueField({ operator: EConditionOperators.Equal, changeRuleValue });
+
+    const picker = screen.getByTestId('condition-date-picker');
+    expect(picker).toHaveAttribute('data-with-time', 'true');
+    fireEvent.click(picker);
+    expect(changeRuleValue).toHaveBeenCalledWith('0');
   });
 
   it('does not crash when switching from equals to exists', () => {

@@ -1,6 +1,6 @@
 import type { IExtraField, TExtraFieldValue } from '../../../../types/template';
 import { EExtraFieldType } from '../../../../types/template';
-import { getEndOfDayTsp } from '../../../../utils/dateTime';
+import { parseUnixSeconds } from '../../../../utils/dateTime';
 import { parseMarkdownToFiles } from '../../../../utils/parseMarkdownFiles';
 import { normalizeCheckboxValue } from '../../../../utils/fields';
 
@@ -27,7 +27,7 @@ export class ExtraFieldsHelper {
         }
 
         if (type === 'date' && typeof value === 'string') {
-          return { [apiName as string]: getEndOfDayTsp(value) };
+          return { [apiName as string]: parseUnixSeconds(value) };
         }
 
         if (type === 'number') {

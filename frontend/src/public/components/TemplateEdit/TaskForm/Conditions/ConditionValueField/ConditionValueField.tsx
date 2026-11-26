@@ -11,7 +11,7 @@ import { EUserStatus } from '../../../../../types/user';
 import { getUserFullName } from '../../../../../utils/users';
 import { OPERATORS_WITHOUT_VALUE } from '../utils/shared';
 import { DatePickerCustom } from '../../../../UI/form/DatePicker';
-import { parseUnixSeconds, toTspDate } from '../../../../../utils/dateTime';
+import { fromUnixSeconds, toTspDate } from '../../../../../utils/dateTime';
 import { getFormattedDropdownOption } from '../utils/getFormattedDropdownOption';
 import styles from '../Conditions.css';
 import { getRegularGroupsList } from '../../../../../redux/selectors/groups';
@@ -161,23 +161,17 @@ export function ConditionValueField({
   }
 
   function renderDateField() {
-    const unixSeconds = parseUnixSeconds(rule.value);
-
     const handleChangeDate = (date: Date | null) => {
-      if (!date) {
-        changeRuleValue('');
-        return;
-      }
-
-      changeRuleValue(toTspDate(date));
+      changeRuleValue(date ? String(toTspDate(date)) : '');
     };
 
     return (
       <DatePickerCustom
+        withTime
         disabled={isDisabled}
         onChange={handleChangeDate}
         placeholderText={formatMessage({ id: 'templates.conditions.value-placeholder' })}
-        selected={unixSeconds !== null ? new Date(unixSeconds * 1000) : null}
+        selected={fromUnixSeconds(rule.value)}
         showPopperArrow={false}
       />
     );
