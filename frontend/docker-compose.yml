@@ -452,8 +452,8 @@ services:
       POSTGRES_PORT: ${FILE_POSTGRES_PORT:-5432}
       STORAGE_TYPE: ${FILE_STORAGE_TYPE:-local}
       SEAWEEDFS_S3_ENDPOINT: ${FILE_SEAWEEDFS_S3_ENDPOINT:-http://seaweedfs-filer:8333}
-      SEAWEEDFS_S3_ACCESS_KEY: ${FILE_SEAWEEDFS_S3_ACCESS_KEY:-any-secret-key-will-work}
-      SEAWEEDFS_S3_SECRET_KEY: ${FILE_SEAWEEDFS_S3_SECRET_KEY:-any-secret-key-will-work}
+      SEAWEEDFS_S3_ACCESS_KEY: &seaweedfs_access_key ${FILE_SEAWEEDFS_S3_ACCESS_KEY:-any-secret-key-will-work}
+      SEAWEEDFS_S3_SECRET_KEY: &seaweedfs_secret_key ${FILE_SEAWEEDFS_S3_SECRET_KEY:-any-secret-key-will-work}
       SEAWEEDFS_S3_REGION: ${FILE_SEAWEEDFS_S3_REGION:-us-central1}
       SEAWEEDFS_S3_USE_SSL: ${FILE_SEAWEEDFS_S3_USE_SSL:-false}
       FASTAPI_BASE_URL: ${FILE_FASTAPI_BASE_URL:-http://localhost:8002}
@@ -516,7 +516,13 @@ services:
   seaweedfs-filer:
     image: chrislusf/seaweedfs:3.95
     container_name: pneumatic-seaweedfs-filer
-    command: filer -master="seaweedfs-master:9333" -s3 -s3.port=8333 -s3.config=/etc/seaweedfs/s3.json
+    entrypoint: ["/bin/sh", "/etc/seaweedfs/filer-entrypoint.sh", "/run/seaweedfs-s3"]
+    command: ["/entrypoint.sh", "filer", "-master=seaweedfs-master:9333", "-s3", "-s3.port=8333"]
+    environment:
+      SEAWEEDFS_S3_ACCESS_KEY: *seaweedfs_access_key
+      SEAWEEDFS_S3_SECRET_KEY: *seaweedfs_secret_key
+    tmpfs:
+      - /run/seaweedfs-s3:mode=0700
     ports:
       # TODO(production): REMOVE — exposes unauthenticated Filer UI to the internet
       - "8888:8888"  # DEV ONLY
@@ -527,7 +533,7 @@ services:
       - seaweedfs-volume
     volumes:
       - ../storage/seaweedfs/filer.toml:/etc/seaweedfs/filer.toml
-      - ../storage/seaweedfs/s3.json:/etc/seaweedfs/s3.json:ro
+      - ../scripts/seaweedfs-filer-entrypoint.sh:/etc/seaweedfs/filer-entrypoint.sh:ro
       - ../seaweedfs/filer/data:/data:rw
     networks:
       - pneumatic

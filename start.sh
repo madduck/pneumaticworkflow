@@ -133,7 +133,6 @@ fi
 # 2. Create default .env file if not exist
 # =============================================================================
 
-ENV_FILE_CREATED=false
 ENV_FILE="./.env"
 
 if [ ! -f ".env" ]; then
@@ -145,7 +144,6 @@ if [ ! -f ".env" ]; then
     cp "$DEFAULT_ENV" "$ENV_FILE"
     echo "" >> "$ENV_FILE"
     echo "SETUP_INCOMPLETE=yes" >> "$ENV_FILE"
-    ENV_FILE_CREATED=true
     print_info "Project configuration started"
     echo ""
 
@@ -390,36 +388,6 @@ esac
 
 print_info "Selected configuration: $COMPOSE_LABEL"
 echo ""
-
-# 2.9 Write SeaweedFS S3 config (only on first setup, same guard as passwords)
-# We generate this file directly because seaweedfs-filer does not natively support env variables for S3 credentials
-if [ "$ENV_FILE_CREATED" = true ]; then
-    S3_AK=$(grep '^FILE_SEAWEEDFS_S3_ACCESS_KEY=' "$ENV_FILE" | cut -d '=' -f2)
-    S3_SK=$(grep '^FILE_SEAWEEDFS_S3_SECRET_KEY=' "$ENV_FILE" | cut -d '=' -f2)
-
-    cat <<EOF > ./storage/seaweedfs/s3.json
-{
-  "identities": [
-    {
-      "name": "file-service",
-      "credentials": [
-        {
-          "accessKey": "${S3_AK:-any-secret-key-will-work}",
-          "secretKey": "${S3_SK:-any-secret-key-will-work}"
-        }
-      ],
-      "actions": [
-        "Read",
-        "Write",
-        "List",
-        "Tagging",
-        "Admin"
-      ]
-    }
-  ]
-}
-EOF
-fi
 
 # 3.2 Start containers
 
