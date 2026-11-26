@@ -34,6 +34,8 @@ The following changes, tracked on separate branches, are integrated:
   commands in both Compose files, PostgreSQL setup for the file service, and how
   PM2 starts the frontend.
 - Seaweed credentials are now handled without the need to modify tracked files.
+- Docker Compose restart policies are fixed so that all containers are started
+  on system boot.
 - Backend fixes: Pneumatic refreshes workflow owners only after it saves group
   membership changes. Two database migrations now preserve the regular
   expressions used to prepare text for search.
