@@ -431,6 +431,7 @@ export const enMessages = {
   'menu.main': 'Main',
   'menu.help-center': 'Help Center',
   'menu.dashboard': 'Dashboard',
+  'sidebar.keep-open': 'Keep sidebar open',
   'menu.tasks': 'My Tasks',
   'menu.groups': 'All groups',
   'menu.workflows': 'Workflows',

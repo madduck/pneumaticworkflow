@@ -9,6 +9,8 @@ import { findAncestor } from '../../utils/helpers';
 
 import type { IUseSidebarNavigationProps, IUseSidebarNavigationResult } from './types';
 
+const PINNED_SIDEBAR_STORAGE_KEY = 'sidebar-pinned';
+
 const isViewportMobile = (menuHiddenBreakpoint: number) => menuHiddenBreakpoint > window.innerWidth;
 
 export const getCurrentMenuItem = (menuItems: IMenuItem[], pathname: string): IMenuItem | null => {
@@ -33,6 +35,8 @@ export const useSidebarNavigation = ({
   const dispatch = useDispatch();
   const [activeItemId, setActiveItemId] = useState<IMenuItem['id'] | null>(null);
   const [isMobile, setIsMobile] = useState(() => isViewportMobile(menuHiddenBreakpoint));
+  const [isPinned, setIsPinned] = useState(() => localStorage.getItem(PINNED_SIDEBAR_STORAGE_KEY) === 'true');
+  const isPinnedOpen = isPinned && !isMobile;
   const isMenuVisible = containerClassnames.includes('main-show-temporary');
   const isMenuHidden = containerClassnames.includes('main-hidden');
 
@@ -41,10 +45,16 @@ export const useSidebarNavigation = ({
   }, [containerClassnames, dispatch]);
 
   const handleCloseMenu = useCallback(() => {
-    if (!isMenuHidden || isMenuVisible) {
+    if (!isPinnedOpen && (!isMenuHidden || isMenuVisible)) {
       closeMenu();
     }
-  }, [closeMenu, isMenuHidden, isMenuVisible]);
+  }, [closeMenu, isMenuHidden, isMenuVisible, isPinnedOpen]);
+
+  const handleTogglePin = () => {
+    const nextIsPinned = !isPinned;
+    localStorage.setItem(PINNED_SIDEBAR_STORAGE_KEY, String(nextIsPinned));
+    setIsPinned(nextIsPinned);
+  };
 
   const handleOpenMenu = () => {
     if (isMenuHidden && !isViewportMobile(menuHiddenBreakpoint)) {
@@ -84,7 +94,11 @@ export const useSidebarNavigation = ({
 
   useEffect(() => {
     const updateViewportMode = () => {
-      setIsMobile(isViewportMobile(menuHiddenBreakpoint));
+      const nextIsMobile = isViewportMobile(menuHiddenBreakpoint);
+      setIsMobile(nextIsMobile);
+      if (nextIsMobile && isPinnedOpen) {
+        closeMenu();
+      }
     };
 
     updateViewportMode();
@@ -93,7 +107,13 @@ export const useSidebarNavigation = ({
     return () => {
       window.removeEventListener('resize', updateViewportMode);
     };
-  }, [menuHiddenBreakpoint]);
+  }, [closeMenu, isPinnedOpen, menuHiddenBreakpoint]);
+
+  useEffect(() => {
+    if (isPinnedOpen && isMenuHidden) {
+      dispatch(setContainerClassnames(3, containerClassnames, true));
+    }
+  }, [containerClassnames, dispatch, isMenuHidden, isPinnedOpen]);
 
   useEffect(() => {
     const updateSelectedMenuItem = () => {
@@ -118,6 +138,8 @@ export const useSidebarNavigation = ({
     handleCloseMenu,
     handleMobileMenuToggle,
     handleOpenMenu,
+    handleTogglePin,
     isMobile,
+    isPinnedOpen,
   };
 };
