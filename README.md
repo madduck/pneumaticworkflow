@@ -33,6 +33,7 @@ The following changes, tracked on separate branches, are integrated:
   includes the SeaweedFS file storage components. Other fixes cover startup
   commands in both Compose files, PostgreSQL setup for the file service, and how
   PM2 starts the frontend.
+- Seaweed credentials are now handled without the need to modify tracked files.
 - Backend fixes: Pneumatic refreshes workflow owners only after it saves group
   membership changes. Two database migrations now preserve the regular
   expressions used to prepare text for search.
