@@ -1,145 +1,11 @@
-:root {
-  --sidebar-bg-trial: var(--pneumatic-color-black88);
-  --sidebar-bg-premium: var(--pneumatic-color-black88);
-  --sidebar-color-trial: var(--pneumatic-color-black16);
-  --sidebar-color-premium: var(--pneumatic-color-black16);
-  --sidebar-color-hover-trial: var(--pneumatic-color-link-hover);
-  --sidebar-color-hover-premium: var(--pneumatic-color-link-hover);
-  --sidebar-color-active-trial: var(--pneumatic-color-link-hover);
-  --sidebar-color-active-premium: var(--pneumatic-color-link-hover);
-}
+.sidebar__link {
+  color: var(--pneumatic-color-black16);
+  transition: color 0.1s ease-in-out;
 
-.sidebar_free {
-  .sidebar_menu,
-  .logo-mobile {
-    background: var(--pneumatic-color-black88);
-  }
-
-  :global(.active) .sidebar__link {
+  &:hover,
+  :global(.active) & {
     color: var(--pneumatic-color-link-hover);
   }
-
-  .sidebar__link {
-    color: var(--pneumatic-color-black16);
-    transition: color 0.1s ease-in-out;
-
-    &:hover {
-      color: var(--pneumatic-color-link-hover);
-    }
-  }
-
-  .sidebar-ribbon {
-    background: var(--pneumatic-color-notification3);
-  }
-
-  .sidebar-ribbon-tail {
-    color: var(--pneumatic-color-notification3);
-  }
-
-  .sidebar-ribbon__label {
-    color: var(--pneumatic-color-notification3-light);
-  }
-}
-
-.sidebar_trial {
-  .sidebar-ribbon {
-    background: var(--pneumatic-color-notification1);
-  }
-
-  .sidebar-ribbon-tail {
-    color: var(--pneumatic-color-notification1);
-  }
-
-  .sidebar-ribbon__label {
-    color: var(--pneumatic-color-notification1-light);
-  }
-}
-
-.sidebar_premium {
-  .sidebar-ribbon {
-    background: var(--pneumatic-color-violet);
-  }
-
-  .sidebar-ribbon-tail {
-    color: var(--pneumatic-color-violet);
-  }
-
-  .sidebar-ribbon__label {
-    color: var(--pneumatic-color-notification3-light);
-  }
-}
-
-.sidebar_partner {
-  .sidebar-ribbon {
-    background: var(--pneumatic-color-notification4);
-  }
-
-  .sidebar-ribbon-tail {
-    color: var(--pneumatic-color-notification4);
-  }
-
-  .sidebar-ribbon__label {
-    color: var(--pneumatic-color-notification3-light);
-  }
-}
-
-.sidebar_trial,
-.sidebar_premium {
-  .sidebar_menu,
-  .logo-mobile {
-    background: var(--pneumatic-color-black88);
-  }
-
-  :global(.active) .sidebar__link {
-    color: var(--pneumatic-color-link-hover);
-  }
-
-  .sidebar__link {
-    color: var(--pneumatic-color-black16);
-    transition: color 0.1s ease-in-out;
-
-    &:hover {
-      color: var(--pneumatic-color-link-hover);
-    }
-  }
-}
-
-.sidebar-ribbon {
-  position: absolute;
-  top: 2.4rem;
-  right: -0.1rem;
-  z-index: -1;
-  width: calc(100% - 2.5rem);
-  height: 2.4rem;
-  text-align: right;
-
-  @media (--mobile) {
-    top: 2rem;
-  }
-}
-
-.sidebar-ribbon__label {
-  position: relative;
-  z-index: 1;
-  padding-right: 1.6rem;
-  font-size: 1.3rem;
-  font-weight: bold;
-  line-height: 1.6rem;
-  opacity: 1;
-  transition: opacity 0.1s ease-out 0.15s;
-}
-
-:global(.menu-default.main-hidden) .sidebar-ribbon__label {
-  opacity: 0;
-  transition: none;
-}
-
-.sidebar-ribbon-tail {
-  position: absolute;
-  top: 50%;
-  right: -0.4rem;
-  z-index: 0;
-  margin-top: -1.2rem;
 }
 
 :global(.main-hidden) .sidebar__link > span {
@@ -168,6 +34,8 @@
 }
 
 .sidebar_menu {
+  background: var(--pneumatic-color-black88);
+
   @media (--mobile) {
     position: absolute;
     top: 1.6rem;
@@ -253,19 +121,41 @@
   visibility: hidden;
 }
 
+.sidebar-header {
+  position: absolute;
+  top: 1.6rem;
+  right: calc(1.6rem + var(--sidebar-pin-space, 0rem));
+  left: 1.6rem;
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+
+  @media (--mobile) {
+    top: 0;
+    left: 6.4rem;
+    height: 6.4rem;
+  }
+}
+
+.company-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: var(--pneumatic-color-white);
+  white-space: nowrap;
+}
+
+:global(.main-hidden) .company-name {
+  visibility: hidden;
+}
+
 .logo-desktop {
+  flex-shrink: 0;
+  border-radius: 50%;
+
   @media (--mobile) {
     display: none;
-  }
-
-  @media (--desktop) {
-    position: absolute;
-    top: 1.6rem;
-    left: 1.6rem;
-    z-index: 1;
-    display: block;
-    outline: none;
-    border-radius: 50%;
   }
 }
 
@@ -276,6 +166,7 @@
   z-index: 1040;
   width: 6.4rem;
   height: 6.4rem;
+  background: var(--pneumatic-color-black88);
   border-radius: 0 3.2rem 3.2rem 0;
 
   @media (--desktop) {
