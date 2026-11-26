@@ -253,6 +253,19 @@ class TaskService(
                 skip_value=True,
             )
 
+    def apply_output_defaults(self) -> None:
+        """Set the defaults for a task that is about to start.
+
+        Existing values take precedence over defaults.
+        """
+        fields = TaskField.objects.filter(
+            Q(task=self.instance) | Q(fieldset__task=self.instance),
+            value='',
+        ).exclude(template_default='')
+        for field in fields:
+            service = TaskFieldService(user=self.user, instance=field)
+            service.apply_template_default()
+
     def create_checklists_from_template(self, instance_template: TaskTemplate):
         for checklist_template in instance_template.checklists.all():
             checklist_service = ChecklistService(

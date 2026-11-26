@@ -21,7 +21,10 @@ The following changes, tracked on separate branches, are integrated:
 - Template defaults: Use the Field options menu to view, edit or clear multiline
   defaults for workflow start and task fields. Public forms and the Start
   Workflow dialog submit untouched defaults, including for hidden fields and
-  fields inside groups.
+  fields inside groups. Tasks save their defaults when they first become active.
+  Completion webhooks include the saved values, and fields you clear stay blank.
+  This requires backend migration `0262_add_task_field_template_default`. The
+  migration does not fill in defaults for existing tasks.
 - Desktop sidebar: The company name replaces the plan badge. You can pin the
   sidebar open, and your browser remembers your choice.
 - Self-hosted startup: When you select “From sources”, `start.sh` rebuilds the

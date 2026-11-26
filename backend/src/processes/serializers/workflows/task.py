@@ -387,7 +387,9 @@ class TaskCompleteSerializer(
             'radio/dropdown: selection string; checkbox: array of '
             'selection strings; file: array of Markdown file-service '
             'links; user: account user email or group name. '
-            'Required fields must be populated; '
-            'empty optional fields accept null, an empty string or array.'
+            'Required fields must be populated. '
+            'Task fields receive their template defaults when the task first '
+            'starts. Omitted fields keep their stored values. To clear an '
+            'optional field, send null, an empty string or an empty array.'
         ),
     )
